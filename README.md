@@ -31,3 +31,12 @@ Configuration
 - <code>MEGAPROMPT_KEYMAP_IND</code> is an array of keymap indicators
 
 There are a lot of elements... they're at the top of the source, so just look at it.
+
+Screenshots
+-----------
+
+![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/git.png)
+![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/permissions.png)
+![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/jobs.png)
+![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/insert.png)
+![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/normal.png)

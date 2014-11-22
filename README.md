@@ -40,3 +40,8 @@ Screenshots
 ![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/jobs.png)
 ![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/insert.png)
 ![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/normal.png)
+
+Issues
+------
+
+This prompt is known to act funny if not used with zsh version 5.

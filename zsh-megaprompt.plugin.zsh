@@ -108,9 +108,9 @@ ${k} ${s[histnum]}%h ${s[dollar]}%# "
     zle reset-prompt
 }
 
-if type -f hook-add-hook 1>/dev/null 2>&1; then
-    hook-add-hook zle_line_init_hook update-prompt
-    hook-add-hook zle_keymap_select_hook update-prompt
+if type -f hooks-add-hook 1>/dev/null 2>&1; then
+    hooks-add-hook zle_line_init_hook update-prompt
+    hooks-add-hook zle_keymap_select_hook update-prompt
 else
     echo "zsh-hooks not loaded!  Please load willghatch/zsh-hooks before zsh-megaprompt." 1>&2
 fi

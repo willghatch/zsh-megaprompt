@@ -44,4 +44,6 @@ Screenshots
 Issues
 ------
 
-This prompt is known to act funny if not used with zsh version 5.
+This was written primarily for zsh version 5.  With version 4.3.17 (currently in
+debian stable) it works fine except that the keymap indicator doesn't initialize
+properly until after the first command or keymap change.

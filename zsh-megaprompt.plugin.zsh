@@ -104,13 +104,15 @@ update-prompt() {
 
     PS1="$s[time]%T ${s[userhost_brackets]}[${s[username]}%n${s[at]}@${s[host]}%m${s[userhost_brackets]}] \$(--getGitBranchForPrompt)\$(--getHgBranchForPrompt)\$(--getPwdForPrompt)${PS1_jobs}${PS1_cmd_stat}
 ${k} ${s[histnum]}%h ${s[dollar]}%# "
-
-    zle reset-prompt
+    if zle; then
+        zle reset-prompt
+    fi
 }
 
 if type -f hooks-add-hook 1>/dev/null 2>&1; then
     hooks-add-hook zle_line_init_hook update-prompt
     hooks-add-hook zle_keymap_select_hook update-prompt
+    add-zsh-hook precmd update-prompt
 else
     echo "zsh-hooks not loaded!  Please load willghatch/zsh-hooks before zsh-megaprompt." 1>&2
 fi

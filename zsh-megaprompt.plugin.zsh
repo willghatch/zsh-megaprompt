@@ -110,7 +110,6 @@ ${k} ${s[histnum]}%h ${s[dollar]}%# "
 }
 
 if type -f hooks-add-hook 1>/dev/null 2>&1; then
-    hooks-add-hook zle_line_init_hook update-prompt
     hooks-add-hook zle_keymap_select_hook update-prompt
     add-zsh-hook precmd update-prompt
 else

@@ -29,6 +29,7 @@ Configuration
 
 - <code>MEGAPROMPT_STYLES</code> is an array for color codes for different parts
 - <code>MEGAPROMPT_KEYMAP_IND</code> is an array of keymap indicators
+- <code>MEGAPROMPT_DISPLAY_P</code> is an array containing true or false - determines what pieces are displayed
 
 There are a lot of elements... they're at the top of the source, so just look at it.
 

@@ -3,10 +3,12 @@ setopt prompt_subst
 
 typeset -Ag MEGAPROMPT_STYLES
 MEGAPROMPT_STYLES[time]="%b%F{cyan}"
+MEGAPROMPT_STYLES[timestr]="%H:%M"
 MEGAPROMPT_STYLES[host]="%B%F{yellow}"
 MEGAPROMPT_STYLES[userhost_brackets]="%b%F{green}"
 MEGAPROMPT_STYLES[username]="%B%F{green}"
 MEGAPROMPT_STYLES[username_root]="%B%F{red}"
+MEGAPROMPT_STYLES[tty]="%b%F{blue}"
 MEGAPROMPT_STYLES[at]="%b%F{green}"
 MEGAPROMPT_STYLES[dir_owner]="%B%F{blue}"
 MEGAPROMPT_STYLES[dir_group]="%B%F{green}"
@@ -30,8 +32,38 @@ MEGAPROMPT_KEYMAP_IND[opp]="%b%K{yellow}%F{black}O%k"
 MEGAPROMPT_KEYMAP_IND[vivis]="%b%K{green}%F{black}V%k"
 MEGAPROMPT_KEYMAP_IND[vivli]="%b%K{green}%F{black}V%k"
 MEGAPROMPT_KEYMAP_IND[keymap_unlisted]="%b%K{white}%F{black}?%k"
+typeset -Ag MEGAPROMPT_DISPLAY_P
+MEGAPROMPT_DISPLAY_P[time]=true
+MEGAPROMPT_DISPLAY_P[histnum]=true
+MEGAPROMPT_DISPLAY_P[username]=true
+MEGAPROMPT_DISPLAY_P[host]=true
+MEGAPROMPT_DISPLAY_P[tty]=false
+#MEGAPROMPT_DISPLAY_P[directory]=true
+#MEGAPROMPT_DISPLAY_P[newline]=true
+#MEGAPROMPT_DISPLAY_P[keymap]=true
+#MEGAPROMPT_DISPLAY_P[git_status]=false
+#MEGAPROMPT_DISPLAY_P[git_branch]=true
+
+# TODO - is there a way to get the last USER command exit status in a function?
+# It's nearly the last thing that I'm not sure how to turn into a function so I can
+# calculate line length and add a horizontal rule option.  (Along with current
+# history number)
+# Note -- if I DO add an hrule option, I don't think it will work with %{color} color strings...
 PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
-PS1_jobs='%(1j, ${MEGAPROMPT_STYLES[jobs_brackets]}[${MEGAPROMPT_STYLES[jobs]}%jj${MEGAPROMPT_STYLES[jobs_brackets]}],)'
+
+-mp-getJobs(){
+    local njobs
+    njobs="$(jobs | wc -l)"
+    if [[ ! "$njobs" -eq 0 ]]; then
+        echo " ${MEGAPROMPT_STYLES[jobs_brackets]}[${MEGAPROMPT_STYLES[jobs]}%jj${MEGAPROMPT_STYLES[jobs_brackets]}]"
+    fi
+}
+
+-mp-getHistory(){
+    if [[ "${MEGAPROMPT_DISPLAY_P[histnum]}" = "true" ]]; then
+        echo "${MEGAPROMPT_STYLES[histnum]}%h "
+    fi
+}
 
 mp-getHgBranch() {
     local branch
@@ -121,6 +153,43 @@ mp-getUser(){
     fi
 }
 
+mp-getHost(){
+    echo "${MEGAPROMPT_STYLES[host]}$HOST"
+}
+
+mp-getTty(){
+    echo "${MEGAPROMPT_STYLES[tty]}${TTY:5}"
+}
+
+-mp-user-host-tty(){
+    local -A p
+    set -A p ${(kv)MEGAPROMPT_DISPLAY_P}
+    local -A s
+    set -A s ${(kv)MEGAPROMPT_STYLES}
+    if [ ! "true" = "${p[username]}" -a \
+         ! "true" = "${p[host]}" -a \
+         ! "true" = "${p[tty]}" ]; then
+        return
+    fi
+    local uht="${s[userhost_brackets]}["
+    if [ "true" = "${p[username]}" ]; then
+        uht="${uht}$(mp-getUser)"
+    fi
+    if [ "true" = "${p[host]}" ]; then
+        uht="${uht}${s[at]}@$(mp-getHost)"
+    fi
+    if [ "true" = "${p[tty]}" ]; then
+        uht="${uht}${s[at]}:$(mp-getTty)"
+    fi
+    uht="${uht}${s[userhost_brackets]}]"
+    echo "$uht "
+}
+-mp-getTime(){
+    if [ "true" = "${MEGAPROMPT_DISPLAY_P[time]}" ]; then
+        echo "${MEGAPROMPT_STYLES[time]}$(date +${MEGAPROMPT_STYLES[timestr]}) "
+    fi
+}
+
 mp-updatePrompt() {
     local -A s
     set -A s ${(kv)MEGAPROMPT_STYLES}
@@ -129,8 +198,8 @@ mp-updatePrompt() {
         k=$MEGAPROMPT_KEYMAP_IND[keymap_unlisted]
     fi
 
-    PS1="$s[time]%T ${s[userhost_brackets]}[\$(mp-getUser)${s[at]}@${s[host]}%m${s[userhost_brackets]}] \$(mp-getGitBranch)\$(mp-getHgBranch)\$(-mp-getPwd)${PS1_jobs}${PS1_cmd_stat}
-${k} ${s[histnum]}%h ${s[prompt]}${s[prompt_char]} "
+    PS1="\$(-mp-getTime)\$(-mp-user-host-tty)\$(mp-getGitBranch)\$(mp-getHgBranch)\$(-mp-getPwd)\$(-mp-getJobs)${PS1_cmd_stat}
+${k} $(-mp-getHistory)${s[prompt]}${s[prompt_char]} "
     if zle; then
         zle reset-prompt
     fi

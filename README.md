@@ -6,10 +6,10 @@ You must load [zsh-hooks](https://github.com/willghatch/zsh-hooks) before this p
 Install
 -------
 
-I recommend using [antigen](https://github.com/zsh-users/antigen) or [antigen-hs](https://github.com/Tarrasch/antigen-hs).  Here is how to do it with antigen:
+I recommend using [zgen](https://github.com/tarjoilija/zgen).  Here is how to do it with zgen:
 
-    antigen bundle willghatch/zsh-hooks
-    antigen bundle willghatch/zsh-megaprompt
+    zgen load willghatch/zsh-hooks
+    zgen load willghatch/zsh-megaprompt
 
 Otherwise, just source the .zsh files
 

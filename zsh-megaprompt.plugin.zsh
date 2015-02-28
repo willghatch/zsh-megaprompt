@@ -17,12 +17,16 @@ MEGAPROMPT_STYLES[dir_write]="%B%F{yellow}"
 MEGAPROMPT_STYLES[histnum]="%b%F{blue}"
 MEGAPROMPT_STYLES[prompt]="%b%F{default}"
 MEGAPROMPT_STYLES[prompt_char]="λ"
-MEGAPROMPT_STYLES[git_master]="%b%F{white}"
-MEGAPROMPT_STYLES[git_other]="%b%F{red}"
 MEGAPROMPT_STYLES[git_branch_brackets]="%b%F{grey}"
+MEGAPROMPT_STYLES[git_default_branch_color]="%b%F{blue}"
 MEGAPROMPT_STYLES[hg_branch_brackets]="%b%F{grey}"
 MEGAPROMPT_STYLES[jobs]="%B%F{magenta}"
 MEGAPROMPT_STYLES[jobs_brackets]="%b%F{red}"
+typeset -Ag MEGAPROMPT_GIT_STYLES
+MEGAPROMPT_GIT_STYLES[master]="%b%F{white}"
+MEGAPROMPT_GIT_STYLES[dev]="%b%F{green}"
+MEGAPROMPT_GIT_STYLES[develop]="%b%F{green}"
+MEGAPROMPT_GIT_STYLES[release.*]="%b%F{red}"
 typeset -Ag MEGAPROMPT_KEYMAP_IND
 MEGAPROMPT_KEYMAP_IND[main]="%b%K{magenta}%F{black}I%k"
 MEGAPROMPT_KEYMAP_IND[viins]="%b%K{magenta}%F{black}I%k"
@@ -90,17 +94,33 @@ mp-getGitBranch() {
 
 mp-styleBranch() {
     local branch
-    local cvs
+    local -A mgs
+    local pcre_on_p
+    set -A mgs ${(kv)MEGAPROMPT_GIT_STYLES}
     branch=$1
-    cvs="$2"
-    if [ "$branch" = "master" ]
-    then
-        branch="${MEGAPROMPT_STYLES[git_master]}$branch"
-    elif [ -n "$branch" ]
-    then
-        branch="${MEGAPROMPT_STYLES[git_other]}$branch"
+    pcre_on_p="$options[rematchpcre]"
+
+    if [[ -n "${mgs[$branch]}" ]]; then
+        echo -n "${mgs[$branch]}$branch"
+        return
     fi
-    echo -n $branch
+
+    setopt rematchpcre
+    for k in "${(@k)mgs}"; do
+        if [[ "$branch" =~ "$k" ]]; then
+            echo -n "${mgs[$k]}$branch"
+            -mp-reset-pcre-option "$prce_on_p"
+            return
+        fi
+    done
+    echo -n "${MEGAPROMPT_STYLES[git_default_branch_color]}$branch"
+    -mp-reset-pcre-option "$prce_on_p"
+}
+
+-mp-reset-pcre-option(){
+    if [[ "$1" = "off" ]]; then
+        unsetopt rematchpcre
+    fi
 }
 
 -mp-getPwd() {

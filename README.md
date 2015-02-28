@@ -30,15 +30,17 @@ Features
 Configuration
 -------------
 
-- <code>MEGAPROMPT_STYLES</code> is an array for color codes for different parts
-- <code>MEGAPROMPT_KEYMAP_IND</code> is an array of keymap indicators
+- <code>MEGAPROMPT_STYLES</code> is an associative array of styles to color codes for different parts
+- <code>MEGAPROMPT_KEYMAP_IND</code> is an associative array of keymap names to their indicators
 - <code>MEGAPROMPT_DISPLAY_P</code> is an array containing true or false - determines what pieces are displayed
+- <code>MEGAPROMPT_GIT_STYLES</code> is an an associative array of regexes to colors for git branch names
 
 There are a lot of elements... they're at the top of the source, so just look at it.
 
 Screenshots
 -----------
 
+These screenshots are out of date, but I haven't wanted to bother updating them.
 ![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/git.png)
 ![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/permissions.png)
 ![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/jobs.png)

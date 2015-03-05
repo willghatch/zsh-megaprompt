@@ -24,7 +24,7 @@ MEGAPROMPT_STYLES[jobs]="%B%F{magenta}"
 MEGAPROMPT_STYLES[jobs_brackets]="%b%F{red}"
 MEGAPROMPT_STYLES[git_ahead_mark]="%b%F{white}▲%F{cyan}"
 MEGAPROMPT_STYLES[git_behind_mark]="%b%F{white}▼%F{cyan}"
-MEGAPROMPT_STYLES[git_dirty_mark]="%b%F{red}☢"
+MEGAPROMPT_STYLES[git_dirty_mark]=" %b%F{red}☢"
 typeset -Ag MEGAPROMPT_GIT_STYLES
 MEGAPROMPT_GIT_STYLES[master]="%b%F{white}"
 MEGAPROMPT_GIT_STYLES[dev]="%b%F{green}"
@@ -104,7 +104,7 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     local -A ms
     set -A ms ${(kv)MEGAPROMPT_STYLES}
     if [[ "${MEGAPROMPT_DISPLAY_P[git_ahead_behind]}" = true ]]; then
-        gitlr=$(git rev-list --left-right @{u}...HEAD)
+        gitlr=$(git rev-list --left-right @{u}...HEAD 2>/dev/null)
         if [[ -n "$gitlr" ]]; then
             echo -n " "
         fi
@@ -118,7 +118,7 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
         fi
     fi
     if [[ "${MEGAPROMPT_DISPLAY_P[git_dirty]}" = true ]]; then
-        git diff --quiet --ignore-submodules HEAD || \
+        git diff --quiet --ignore-submodules HEAD 1>/dev/null 2>&1 || \
             echo -n "${ms[git_dirty_mark]}"
     fi
 }

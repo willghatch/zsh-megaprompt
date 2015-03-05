@@ -22,6 +22,9 @@ MEGAPROMPT_STYLES[git_default_branch_color]="%b%F{blue}"
 MEGAPROMPT_STYLES[hg_branch_brackets]="%b%F{grey}"
 MEGAPROMPT_STYLES[jobs]="%B%F{magenta}"
 MEGAPROMPT_STYLES[jobs_brackets]="%b%F{red}"
+MEGAPROMPT_STYLES[git_ahead_mark]="%b%F{white}▲%F{cyan}"
+MEGAPROMPT_STYLES[git_behind_mark]="%b%F{white}▼%F{cyan}"
+MEGAPROMPT_STYLES[git_dirty_mark]="%b%F{red}☢"
 typeset -Ag MEGAPROMPT_GIT_STYLES
 MEGAPROMPT_GIT_STYLES[master]="%b%F{white}"
 MEGAPROMPT_GIT_STYLES[dev]="%b%F{green}"
@@ -42,6 +45,8 @@ MEGAPROMPT_DISPLAY_P[histnum]=true
 MEGAPROMPT_DISPLAY_P[username]=true
 MEGAPROMPT_DISPLAY_P[host]=true
 MEGAPROMPT_DISPLAY_P[tty]=false
+MEGAPROMPT_DISPLAY_P[git_dirty]=true
+MEGAPROMPT_DISPLAY_P[git_ahead_behind]=true
 #MEGAPROMPT_DISPLAY_P[directory]=true
 #MEGAPROMPT_DISPLAY_P[newline]=true
 #MEGAPROMPT_DISPLAY_P[keymap]=true
@@ -89,7 +94,35 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     branch=${branch:2}
     echo -n "${MEGAPROMPT_STYLES[git_branch_brackets]}["
     -mp-styleBranch "$branch" git
+    -mp-gitStatus
     echo -n "${MEGAPROMPT_STYLES[git_branch_brackets]}] "
+}
+
+-mp-gitStatus(){
+    local gitlr
+    local gitl
+    local gitr
+    local gitdirty
+    local -A ms
+    set -A ms ${(kv)MEGAPROMPT_STYLES}
+    if [[ "${MEGAPROMPT_DISPLAY_P[git_ahead_behind]}" = true ]]; then
+        gitlr=$(git rev-list --left-right @{u}...HEAD)
+        if [[ -n "$gitlr" ]]; then
+            echo -n " "
+        fi
+        gitl=$(echo "$gitlr" | grep -E '^<' | wc -l)
+        gitr=$(echo "$gitlr" | grep -E '^>' | wc -l)
+        if [[ 0 -ne "$gitl" ]]; then
+            echo -n "${ms[git_behind_mark]}$gitl"
+        fi
+        if [[ 0 -ne "$gitr" ]]; then
+            echo -n "${ms[git_ahead_mark]}$gitr"
+        fi
+    fi
+    if [[ "${MEGAPROMPT_DISPLAY_P[git_dirty]}" = true ]]; then
+        git diff --quiet --ignore-submodules HEAD || \
+            echo -n "${ms[git_dirty_mark]}"
+    fi
 }
 
 -mp-styleBranch() {

@@ -50,8 +50,6 @@ MEGAPROMPT_DISPLAY_P[git_ahead_behind]=true
 #MEGAPROMPT_DISPLAY_P[directory]=true
 #MEGAPROMPT_DISPLAY_P[newline]=true
 #MEGAPROMPT_DISPLAY_P[keymap]=true
-#MEGAPROMPT_DISPLAY_P[git_status]=false
-#MEGAPROMPT_DISPLAY_P[git_branch]=true
 
 # TODO - is there a way to get the last USER command exit status in a function?
 # It's nearly the last thing that I'm not sure how to turn into a function so I can

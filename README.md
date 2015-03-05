@@ -39,7 +39,7 @@ Configuration
     - <code>username</code> do you want to see your username? (I recommend setting it to false for your normal username, true otherwise)
     - <code>host</code> do you want to see your hostname? (I recommend setting it to false unless $SSH_CLIENT or $TMUX is set)
     - <code>tty</code> do you want to see what tty you're on?
-    - <code>tty</code> do you want to see what tty you're on?
+    - <code>histnum</code> do you want to see what history number you're on? (useful for history expansion)
 - <code>MEGAPROMPT_GIT_STYLES</code> is an an associative array of regexes to colors for git branch names
 
 These arrays are defined at the top of the source, so just look at it to see what fields exist on the ones I haven't documented.  There are a lot of fields.

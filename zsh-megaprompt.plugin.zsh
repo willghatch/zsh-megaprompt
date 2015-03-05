@@ -69,18 +69,18 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     fi
 }
 
-mp-getHgBranch() {
+-mp-getHgBranch() {
     local branch
     branch=$(hg branch 2>/dev/null)
     if [[ -z "$branch" ]]; then
         return
     fi
     echo -n "${MEGAPROMPT_STYLES[hg_branch_brackets]}<"
-    mp-styleBranch "$branch" hg
+    -mp-styleBranch "$branch" hg
     echo -n "${MEGAPROMPT_STYLES[hg_branch_brackets]}> "
 }
 
-mp-getGitBranch() {
+-mp-getGitBranch() {
     local branch
     branch=$(git branch 2>/dev/null | fgrep '*')
     if [[ -z "$branch" ]]; then
@@ -88,11 +88,11 @@ mp-getGitBranch() {
     fi
     branch=${branch:2}
     echo -n "${MEGAPROMPT_STYLES[git_branch_brackets]}["
-    mp-styleBranch "$branch" git
+    -mp-styleBranch "$branch" git
     echo -n "${MEGAPROMPT_STYLES[git_branch_brackets]}] "
 }
 
-mp-styleBranch() {
+-mp-styleBranch() {
     local branch
     local -A mgs
     local pcre_on_p
@@ -218,7 +218,7 @@ mp-updatePrompt() {
         k=$MEGAPROMPT_KEYMAP_IND[keymap_unlisted]
     fi
 
-    PS1="\$(-mp-getTime)\$(-mp-user-host-tty)\$(mp-getGitBranch)\$(mp-getHgBranch)\$(-mp-getPwd)\$(-mp-getJobs)${PS1_cmd_stat}
+    PS1="\$(-mp-getTime)\$(-mp-user-host-tty)\$(-mp-getGitBranch)\$(-mp-getHgBranch)\$(-mp-getPwd)\$(-mp-getJobs)${PS1_cmd_stat}
 ${k} $(-mp-getHistory)${s[prompt]}${s[prompt_char]} "
     if zle; then
         zle reset-prompt

@@ -34,6 +34,7 @@ Configuration
 - <code>MEGAPROMPT_KEYMAP_IND</code> is an associative array of keymap names to their indicators
 - <code>MEGAPROMPT_DISPLAY_P</code> is an associative array of display pieces to "true" or "false"
     - <code>git_dirty</code> do you want to be informed when your git repo is dirty?  (note: this may be slow)
+    - <code>git_untracked</code> do you want to be informed when your git repo is has untracked files?
     - <code>git_ahead_behind</code> do you want to be informed when your git repo ahead or behind of its tracking branch?
     - <code>time</code> do you want the time of the command? (Yes -- it's useful later when you want to know when you ran something)
     - <code>username</code> do you want to see your username? (I recommend setting it to false for your normal username, true otherwise)

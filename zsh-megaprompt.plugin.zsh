@@ -24,7 +24,8 @@ MEGAPROMPT_STYLES[jobs]="%B%F{magenta}"
 MEGAPROMPT_STYLES[jobs_brackets]="%b%F{red}"
 MEGAPROMPT_STYLES[git_ahead_mark]="%b%F{white}▲%F{cyan}"
 MEGAPROMPT_STYLES[git_behind_mark]="%b%F{white}▼%F{cyan}"
-MEGAPROMPT_STYLES[git_dirty_mark]=" %b%F{red}☢"
+MEGAPROMPT_STYLES[git_dirty_mark]=" %b%F{red}D"
+MEGAPROMPT_STYLES[git_untracked_mark]=" %b%F{red}U"
 typeset -Ag MEGAPROMPT_GIT_STYLES
 MEGAPROMPT_GIT_STYLES[master]="%b%F{white}"
 MEGAPROMPT_GIT_STYLES[dev]="%b%F{green}"
@@ -47,6 +48,7 @@ MEGAPROMPT_DISPLAY_P[host]=true
 MEGAPROMPT_DISPLAY_P[tty]=false
 MEGAPROMPT_DISPLAY_P[git_dirty]=true
 MEGAPROMPT_DISPLAY_P[git_ahead_behind]=true
+MEGAPROMPT_DISPLAY_P[git_untracked]=true
 #MEGAPROMPT_DISPLAY_P[directory]=true
 #MEGAPROMPT_DISPLAY_P[newline]=true
 #MEGAPROMPT_DISPLAY_P[keymap]=true
@@ -100,7 +102,6 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     local gitlr
     local gitl
     local gitr
-    local gitdirty
     local -A ms
     set -A ms ${(kv)MEGAPROMPT_STYLES}
     if [[ "${MEGAPROMPT_DISPLAY_P[git_ahead_behind]}" = true ]]; then
@@ -120,6 +121,10 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     if [[ "${MEGAPROMPT_DISPLAY_P[git_dirty]}" = true ]]; then
         git diff --quiet --ignore-submodules HEAD 1>/dev/null 2>&1 || \
             echo -n "${ms[git_dirty_mark]}"
+    fi
+    if [[ "${MEGAPROMPT_DISPLAY_P[git_untracked]}" = true ]]; then
+        git ls-files --other --directory --exclude-standard | sed q1 >/dev/null || \
+            echo -n "${ms[git_untracked_mark]}"
     fi
 }
 

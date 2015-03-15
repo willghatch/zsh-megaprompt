@@ -20,7 +20,8 @@ MEGAPROMPT_STYLES[prompt_char]="λ"
 MEGAPROMPT_STYLES[git_branch_brackets]="%b%F{grey}"
 MEGAPROMPT_STYLES[git_default_branch_color]="%b%F{blue}"
 MEGAPROMPT_STYLES[hg_branch_brackets]="%b%F{grey}"
-MEGAPROMPT_STYLES[jobs]="%B%F{magenta}"
+MEGAPROMPT_STYLES[jobs_number]="%B%F{magenta}"
+MEGAPROMPT_STYLES[jobs_letter]="%B%F{magenta}"
 MEGAPROMPT_STYLES[jobs_brackets]="%b%F{red}"
 MEGAPROMPT_STYLES[git_ahead_mark]="%b%F{white}▲%F{cyan}"
 MEGAPROMPT_STYLES[git_behind_mark]="%b%F{white}▼%F{cyan}"
@@ -61,10 +62,19 @@ MEGAPROMPT_DISPLAY_P[git_untracked]=true
 PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
 
 -mp-getJobs(){
-    local njobs
-    njobs="$(jobs | wc -l)"
-    if [[ ! "$njobs" -eq 0 ]]; then
-        echo " ${MEGAPROMPT_STYLES[jobs_brackets]}[${MEGAPROMPT_STYLES[jobs]}%jj${MEGAPROMPT_STYLES[jobs_brackets]}]"
+    local running
+    local stopped
+    running="$(jobs -r | wc -l)"
+    stopped="$(jobs -s | wc -l)"
+    if [[ ! "$(jobs | wc -l)" -eq 0 ]]; then
+        echo -n " ${MEGAPROMPT_STYLES[jobs_brackets]}["
+        if [[ ! "$running" -eq 0 ]]; then
+            echo -n "${MEGAPROMPT_STYLES[jobs_number]}$running${MEGAPROMPT_STYLES[jobs_letter]}r"
+        fi
+        if [[ ! "$stopped" -eq 0 ]]; then
+            echo -n "${MEGAPROMPT_STYLES[jobs_number]}$stopped${MEGAPROMPT_STYLES[jobs_letter]}s"
+        fi
+        echo -n "${MEGAPROMPT_STYLES[jobs_brackets]}]"
     fi
 }
 

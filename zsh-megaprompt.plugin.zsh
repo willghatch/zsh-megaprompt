@@ -64,8 +64,8 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
 -mp-getJobs(){
     local running
     local stopped
-    running="$(jobs -r | wc -l)"
-    stopped="$(jobs -s | wc -l)"
+    running="$(jobs -r | grep -F [ | wc -l)"
+    stopped="$(jobs -s | grep -F [ | wc -l)"
     if [[ ! "$(jobs | wc -l)" -eq 0 ]]; then
         echo -n " ${MEGAPROMPT_STYLES[jobs_brackets]}["
         if [[ ! "$running" -eq 0 ]]; then

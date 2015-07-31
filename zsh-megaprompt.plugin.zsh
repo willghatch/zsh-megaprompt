@@ -135,8 +135,9 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
             echo -n "${ms[git_dirty_mark]}"
     fi
     if [[ "${MEGAPROMPT_DISPLAY_P[git_submodule_dirty]}" = true ]]; then
-        git diff --quiet --submodule HEAD 1>/dev/null 2>&1 || \
+        if [[ ! $(git submodule summary -n 1 | wc -c) -eq 0 ]]; then
             echo -n "${ms[git_submodule_dirty_mark]}"
+        fi
     fi
     if [[ "${MEGAPROMPT_DISPLAY_P[git_untracked]}" = true ]]; then
         git ls-files --other --directory --exclude-standard | sed q1 >/dev/null || \

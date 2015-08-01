@@ -47,6 +47,8 @@ MEGAPROMPT_DISPLAY_P[time]=true
 MEGAPROMPT_DISPLAY_P[histnum]=true
 MEGAPROMPT_DISPLAY_P[username]=true
 MEGAPROMPT_DISPLAY_P[host]=true
+# this one just determines whether to show the fully qualified domain name
+MEGAPROMPT_DISPLAY_P[longhost]=false
 MEGAPROMPT_DISPLAY_P[tty]=false
 MEGAPROMPT_DISPLAY_P[git_dirty]=true
 MEGAPROMPT_DISPLAY_P[git_submodule_dirty]=true
@@ -55,6 +57,7 @@ MEGAPROMPT_DISPLAY_P[git_untracked]=true
 #MEGAPROMPT_DISPLAY_P[directory]=true
 #MEGAPROMPT_DISPLAY_P[newline]=true
 #MEGAPROMPT_DISPLAY_P[keymap]=true
+typeset -Ag MEGAPROMPT_MISC
 
 # TODO - is there a way to get the last USER command exit status in a function?
 # It's nearly the last thing that I'm not sure how to turn into a function so I can
@@ -227,7 +230,11 @@ mp-getUser(){
 }
 
 mp-getHost(){
-    echo "${MEGAPROMPT_STYLES[host]}$HOST"
+    if [[ "$MEGAPROMPT_DISPLAY_P[longhost]" = "true" ]]; then
+        echo "${MEGAPROMPT_STYLES[host]}$HOST"
+    else
+        echo "${MEGAPROMPT_STYLES[host]}$(hostname -s)"
+    fi
 }
 
 mp-getTty(){

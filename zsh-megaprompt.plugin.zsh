@@ -147,8 +147,10 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
         fi
     fi
     if [[ "${MEGAPROMPT_DISPLAY_P[git_untracked]}" = true ]]; then
-        git ls-files --other --directory --exclude-standard | sed q1 >/dev/null || \
+        # piping to "sed q1" may be faster (I don't actually know), but it breaks on BSD (or mac).
+        if [[ -n "$(git ls-files --other --directory --exclude-standard)" ]]; then
             echo -n "${ms[git_untracked_mark]}"
+        fi
     fi
 }
 

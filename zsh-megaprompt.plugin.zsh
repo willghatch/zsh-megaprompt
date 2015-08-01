@@ -73,8 +73,8 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
 -mp-getJobs(){
     local running
     local stopped
-    running="$(jobs -r | grep -F [ | wc -l)"
-    stopped="$(jobs -s | grep -F [ | wc -l)"
+    running="$(jobs -r | grep -F [ | wc -l | tr -d " ")"
+    stopped="$(jobs -s | grep -F [ | wc -l | tr -d " ")"
     if [[ ! "$(jobs | wc -l)" -eq 0 ]]; then
         echo -n " ${MEGAPROMPT_STYLES[jobs_brackets]}["
         if [[ ! "$running" -eq 0 ]]; then
@@ -128,8 +128,9 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
         if [[ -n "$gitlr" ]]; then
             echo -n " "
         fi
-        gitl=$(echo "$gitlr" | grep -E '^<' | wc -l)
-        gitr=$(echo "$gitlr" | grep -E '^>' | wc -l)
+        # tr is used to remove wc's leading white space for our BSD friends
+        gitl=$(echo "$gitlr" | grep -E '^<' | wc -l | tr -d " ")
+        gitr=$(echo "$gitlr" | grep -E '^>' | wc -l | tr -d " ")
         if [[ 0 -ne "$gitl" ]]; then
             echo -n "${ms[git_behind_mark]}$gitl"
         fi

@@ -30,7 +30,7 @@ Features
 Configuration
 -------------
 
-- <code>MEGAPROMPT_STYLES</code> is an associative array of styles to color codes for different parts
+- <code>MEGAPROMPT_STYLES</code> is an associative array of styles to color codes or strings for different parts
 - <code>MEGAPROMPT_KEYMAP_IND</code> is an associative array of keymap names to their indicators
 - <code>MEGAPROMPT_DISPLAY_P</code> is an associative array of display pieces to "true" or "false"
     - <code>git_dirty</code> do you want to be informed when your git repo is dirty?  (note: this may be slow)
@@ -41,6 +41,8 @@ Configuration
     - <code>host</code> do you want to see your hostname? (I recommend setting it to false unless $SSH_CLIENT or $TMUX is set)
     - <code>tty</code> do you want to see what tty you're on?
     - <code>histnum</code> do you want to see what history number you're on? (useful for history expansion)
+    - <code>hrule</code> do you want a horizontal line to go to the end of the line to visually delimit output from different commands?
+    - <code>truncate</code> do you want to truncate the top line if it is longer than your terminal? (this also happens if hrule is on)
 - <code>MEGAPROMPT_GIT_STYLES</code> is an an associative array of regexes to colors for git branch names
 
 These arrays are defined at the top of the source, so just look at it to see what fields exist on the ones I haven't documented.  There are a lot of fields.

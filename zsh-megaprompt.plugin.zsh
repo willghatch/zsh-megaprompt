@@ -2,6 +2,7 @@
 setopt prompt_subst
 
 typeset -Ag MEGAPROMPT_STYLES
+MEGAPROMPT_STYLES[hrule_char]="%b%F{blue}┅"
 MEGAPROMPT_STYLES[time]="%b%F{cyan}"
 MEGAPROMPT_STYLES[timestr]="%H:%M"
 MEGAPROMPT_STYLES[host]="%B%F{yellow}"
@@ -43,6 +44,9 @@ MEGAPROMPT_KEYMAP_IND[vivis]="%b%K{green}%F{black}V%k"
 MEGAPROMPT_KEYMAP_IND[vivli]="%b%K{green}%F{black}V%k"
 MEGAPROMPT_KEYMAP_IND[keymap_unlisted]="%b%K{white}%F{black}?%k"
 typeset -Ag MEGAPROMPT_DISPLAY_P
+MEGAPROMPT_DISPLAY_P[hrule]=true
+# an hrule forces truncation, but if you want it in any case, here it is
+MEGAPROMPT_DISPLAY_P[truncate]=false
 MEGAPROMPT_DISPLAY_P[time]=true
 MEGAPROMPT_DISPLAY_P[histnum]=true
 MEGAPROMPT_DISPLAY_P[username]=true
@@ -270,6 +274,27 @@ mp-getTty(){
     fi
 }
 
+-mp-get-hrule-string(){
+    if [[ "true" = "${MEGAPROMPT_DISPLAY_P[hrule]}" ]]; then
+        for i in {1..$COLUMNS}; do
+            echo -n "${MEGAPROMPT_STYLES[hrule_char]}"
+        done
+    fi
+}
+
+-mp-get-truncate-start(){
+    if [ "true" = "${MEGAPROMPT_DISPLAY_P[truncate]}" -o \
+        "true" = "${MEGAPROMPT_DISPLAY_P[hrule]}" ]; then
+        echo "%$(( $COLUMNS - 1 ))>>"
+    fi
+}
+-mp-get-truncate-end(){
+    if [ "true" = "${MEGAPROMPT_DISPLAY_P[truncate]}" -o \
+        "true" = "${MEGAPROMPT_DISPLAY_P[hrule]}" ]; then
+        echo "%<<"
+    fi
+}
+
 mp-updatePrompt() {
     local -A s
     set -A s ${(kv)MEGAPROMPT_STYLES}
@@ -278,7 +303,8 @@ mp-updatePrompt() {
         k=$MEGAPROMPT_KEYMAP_IND[keymap_unlisted]
     fi
 
-    PS1="\$(-mp-getTime)\$(-mp-user-host-tty)\$(-mp-getGitBranch)\$(-mp-getHgBranch)\$(-mp-getPwd)\$(-mp-getJobs)${PS1_cmd_stat}
+    # you can set the ending character of the hrule by putting it between the >> that set truncation.
+    PS1="\$(-mp-get-truncate-start)\$(-mp-getTime)\$(-mp-user-host-tty)\$(-mp-getGitBranch)\$(-mp-getHgBranch)\$(-mp-getPwd)\$(-mp-getJobs)${PS1_cmd_stat} ${s[hrule]}$(-mp-get-hrule-string)\$(-mp-get-truncate-end)
 ${k} $(-mp-getHistory)${s[prompt]}${s[prompt_char]} "
     if zle; then
         zle reset-prompt

@@ -104,8 +104,22 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     echo -n "${MEGAPROMPT_STYLES[hg_branch_brackets]}> "
 }
 
+-mp-getGitRoot() {
+    if [[ -e "$1/.git" ]]; then
+        echo "$1"
+    elif [[ "$1" = "/" ]]; then
+        echo ""
+    elif [[ -z "$1" ]]; then
+        echo ""
+    else
+        echo "$(-mp-getGitRoot $(dirname $1))"
+    fi
+}
+
 -mp-getGitBranch() {
     local branch
+    local groot
+    local curdir
     branch=$(git branch 2>/dev/null | fgrep '*')
     if [[ -z "$branch" ]]; then
         return
@@ -113,7 +127,11 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     branch=${branch:2}
     echo -n "${MEGAPROMPT_STYLES[git_branch_brackets]}["
     -mp-styleBranch "$branch" git
+    curdir="$(pwd)"
+    groot="$(-mp-getGitRoot $curdir)"
+    builtin cd "$groot"
     -mp-gitStatus
+    builtin cd "$curdir"
     echo -n "${MEGAPROMPT_STYLES[git_branch_brackets]}] "
 }
 

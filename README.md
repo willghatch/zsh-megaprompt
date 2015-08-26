@@ -60,9 +60,11 @@ These screenshots are out of date, but I haven't wanted to bother updating them.
 Issues
 ------
 
-This was written primarily for zsh version 5.  With version 4.3.17 (currently in
-debian stable) it works fine except that the keymap indicator doesn't initialize
-properly until after the first command or keymap change.
-
-The PCRE module is required for git branch coloring.  As far as I know all distributions include it.
+- This was written primarily for zsh version 5.  With version 4.3.17
+  it works fine except that the keymap indicator doesn't initialize
+  properly until after the first command or keymap change.
+- The hrule option (`MEGAPROMPT_DISPLAY_P[hrule]=true`) and the truncate option don't 
+  work well below zsh version 5.0.7 -- they are truncated a little too early and
+  therefore don't span the whole line like they are supposed to.
+- The PCRE module is required for git branch coloring.  As far as I know all distributions include it.
 

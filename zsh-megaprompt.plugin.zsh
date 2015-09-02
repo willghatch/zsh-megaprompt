@@ -141,8 +141,10 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     local gitlr
     local gitl
     local gitr
+    local gitbare
     local -A ms
     set -A ms ${(kv)MEGAPROMPT_STYLES}
+    gitbare="$(git rev-parse --is-bare-repository)"
     if [[ "${MEGAPROMPT_DISPLAY_P[git_ahead_behind]}" = true ]]; then
         gitlr=$(git rev-list --left-right @{u}...HEAD 2>/dev/null)
         if [[ -n "$gitlr" ]]; then
@@ -162,19 +164,22 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
         git rev-parse --abbrev-ref @{upstream} 1>/dev/null 2>&1 || \
             echo -n "${ms[git_no_remote_tracking_mark]}"
     fi
-    if [[ "${MEGAPROMPT_DISPLAY_P[git_dirty]}" = true ]]; then
-        git diff --quiet --ignore-submodules HEAD 1>/dev/null 2>&1 || \
-            echo -n "${ms[git_dirty_mark]}"
-    fi
-    if [[ "${MEGAPROMPT_DISPLAY_P[git_submodule_dirty]}" = true ]]; then
-        if [[ ! $(git submodule summary -n 1 | wc -c) -eq 0 ]]; then
-            echo -n "${ms[git_submodule_dirty_mark]}"
+    if [[ "$gitbare" = false ]]; then
+        if [[ "${MEGAPROMPT_DISPLAY_P[git_dirty]}" = true ]]; then
+            git diff --quiet --ignore-submodules HEAD 1>/dev/null 2>&1 || \
+                echo -n "${ms[git_dirty_mark]}"
         fi
-    fi
-    if [[ "${MEGAPROMPT_DISPLAY_P[git_untracked]}" = true ]]; then
-        # piping to "sed q1" may be faster (I don't actually know), but it breaks on BSD (or mac).
-        if [[ -n "$(git ls-files --other --directory --exclude-standard)" ]]; then
-            echo -n "${ms[git_untracked_mark]}"
+        if [[ "${MEGAPROMPT_DISPLAY_P[git_submodule_dirty]}" = true ]]; then
+            if [[ ! $(git submodule summary -n 1 | wc -c) -eq 0 ]]; then
+                echo -n "${ms[git_submodule_dirty_mark]}"
+            fi
+        fi
+        if [[ "${MEGAPROMPT_DISPLAY_P[git_untracked]}" = true ]]; then
+            # piping to "sed q1" may be faster (I don't actually know),
+            # but it breaks on BSD (or mac).
+            if [[ -n "$(git ls-files --other --directory --exclude-standard)" ]]; then
+                echo -n "${ms[git_untracked_mark]}"
+            fi
         fi
     fi
 }

@@ -29,6 +29,7 @@ MEGAPROMPT_STYLES[git_behind_mark]="%b%F{white}▼%F{cyan}"
 MEGAPROMPT_STYLES[git_dirty_mark]=" %b%F{red}D"
 MEGAPROMPT_STYLES[git_submodule_dirty_mark]=" %b%F{red}S"
 MEGAPROMPT_STYLES[git_untracked_mark]=" %b%F{red}U"
+MEGAPROMPT_STYLES[git_no_remote_tracking_mark]=" %b%F{white}N"
 typeset -Ag MEGAPROMPT_GIT_STYLES
 MEGAPROMPT_GIT_STYLES[master]="%b%F{white}"
 MEGAPROMPT_GIT_STYLES[dev]="%b%F{green}"
@@ -58,6 +59,7 @@ MEGAPROMPT_DISPLAY_P[git_dirty]=true
 MEGAPROMPT_DISPLAY_P[git_submodule_dirty]=true
 MEGAPROMPT_DISPLAY_P[git_ahead_behind]=true
 MEGAPROMPT_DISPLAY_P[git_untracked]=true
+MEGAPROMPT_DISPLAY_P[git_no_remote_tracking]=true
 #MEGAPROMPT_DISPLAY_P[directory]=true
 #MEGAPROMPT_DISPLAY_P[newline]=true
 #MEGAPROMPT_DISPLAY_P[keymap]=true
@@ -155,6 +157,10 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
         if [[ 0 -ne "$gitr" ]]; then
             echo -n "${ms[git_ahead_mark]}$gitr"
         fi
+    fi
+    if [[ "${MEGAPROMPT_DISPLAY_P[git_no_remote_tracking]}" = true ]]; then
+        git rev-parse --abbrev-ref @{upstream} 1>/dev/null 2>&1 || \
+            echo -n "${ms[git_no_remote_tracking_mark]}"
     fi
     if [[ "${MEGAPROMPT_DISPLAY_P[git_dirty]}" = true ]]; then
         git diff --quiet --ignore-submodules HEAD 1>/dev/null 2>&1 || \

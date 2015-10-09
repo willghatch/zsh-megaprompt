@@ -67,12 +67,17 @@ typeset -Ag MEGAPROMPT_MISC
 
 # TODO - is there a way to get the last USER command exit status in a function?
 # It's nearly the last thing that I'm not sure how to turn into a function so I can
-# calculate line length and add a horizontal rule option.  (Along with current
-# history number)
-# Note -- if I DO add an hrule option, I don't think it will work with %{color} color strings...
+# calculate line length and add a horizontal rule option that can plan for eg.
+# compressing the file path.  (Along with current history number)
+
+# TODO - coloring options
+#        I might have the trailing slash on a dir give info (eg. is it a symlink, etc)
+#        I might have the root slash be a different color if it's in a chroot or something
+
 PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
 
 -mp-getJobs(){
+    # TODO - if there is only one job running, there sohuld be an option to show its name
     local running
     local stopped
     running="$(jobs -r | grep -F [ | wc -l | tr -d " ")"

@@ -274,7 +274,8 @@ mp-getHost(){
     if [[ "$MEGAPROMPT_DISPLAY_P[longhost]" = "true" ]]; then
         echo "${MEGAPROMPT_STYLES[host]}$HOST"
     else
-        echo "${MEGAPROMPT_STYLES[host]}$(hostname -s)"
+        # $(hostname -s) was giving weird errors on my laptop, so use this instead.
+        echo "${MEGAPROMPT_STYLES[host]}${HOST/\.*/}"
     fi
 }
 

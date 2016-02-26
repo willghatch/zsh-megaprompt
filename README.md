@@ -43,6 +43,7 @@ Configuration
     - <code>histnum</code> do you want to see what history number you're on? (useful for history expansion)
     - <code>hrule</code> do you want a horizontal line to go to the end of the line to visually delimit output from different commands?
     - <code>truncate</code> do you want to truncate the top line if it is longer than your terminal? (this also happens if hrule is on)
+    - <code>branch_style_regex</code> do you want to match branch styles using regex (requires zsh to be compiled with PCRE support)?
 - <code>MEGAPROMPT_GIT_STYLES</code> is an an associative array of regexes to colors for git branch names
 
 These arrays are defined at the top of the source, so just look at it to see what fields exist on the ones I haven't documented.  There are a lot of fields.

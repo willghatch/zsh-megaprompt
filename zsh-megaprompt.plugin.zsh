@@ -60,6 +60,7 @@ MEGAPROMPT_DISPLAY_P[git_submodule_dirty]=true
 MEGAPROMPT_DISPLAY_P[git_ahead_behind]=true
 MEGAPROMPT_DISPLAY_P[git_untracked]=true
 MEGAPROMPT_DISPLAY_P[git_no_remote_tracking]=true
+MEGAPROMPT_DISPLAY_P[branch_style_regex]=true
 #MEGAPROMPT_DISPLAY_P[directory]=true
 #MEGAPROMPT_DISPLAY_P[newline]=true
 #MEGAPROMPT_DISPLAY_P[keymap]=true
@@ -199,6 +200,11 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
 
     if [[ -n "${mgs[$branch]}" ]]; then
         echo -n "${mgs[$branch]}$branch"
+        return
+    fi
+
+    if [[ "$MEGAPROMPT_DISPLAY_P[branch_style_regex]" != true ]]; then
+        echo -n "$branch"
         return
     fi
 

@@ -103,6 +103,11 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
 
 -mp-getHgBranch() {
     local branch
+    # Don't try if hg is not available
+    if which hg >/dev/null 2>&1; then
+    else
+        return
+    fi
     branch=$(hg branch 2>/dev/null)
     if [[ -z "$branch" ]]; then
         return

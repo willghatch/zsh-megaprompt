@@ -81,9 +81,9 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     # TODO - if there is only one job running, there sohuld be an option to show its name
     local running
     local stopped
-    running="$(jobs -r | grep -F [ | wc -l | tr -d " ")"
-    stopped="$(jobs -s | grep -F [ | wc -l | tr -d " ")"
-    if [[ ! "$(jobs | wc -l)" -eq 0 ]]; then
+    running="$(jobs -r | command grep -F [ | wc -l | tr -d " ")"
+    stopped="$(jobs -s | command grep -F [ | wc -l | tr -d " ")"
+    if [[ ! "$(jobs | command wc -l)" -eq 0 ]]; then
         echo -n " ${MEGAPROMPT_STYLES[jobs_brackets]}["
         if [[ ! "$running" -eq 0 ]]; then
             echo -n "${MEGAPROMPT_STYLES[jobs_number]}$running${MEGAPROMPT_STYLES[jobs_letter]}r"
@@ -133,7 +133,7 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     local branch
     local groot
     local curdir
-    branch=$(git branch 2>/dev/null | fgrep '*')
+    branch=$(git branch 2>/dev/null | command fgrep '*')
     if [[ -z "$branch" ]]; then
         return
     fi
@@ -162,8 +162,8 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
             echo -n " "
         fi
         # tr is used to remove wc's leading white space for our BSD friends
-        gitl=$(echo "$gitlr" | grep -E '^<' | wc -l | tr -d " ")
-        gitr=$(echo "$gitlr" | grep -E '^>' | wc -l | tr -d " ")
+        gitl=$(echo "$gitlr" | command grep -E '^<' | wc -l | tr -d " ")
+        gitr=$(echo "$gitlr" | command grep -E '^>' | wc -l | tr -d " ")
         if [[ 0 -ne "$gitl" ]]; then
             echo -n "${ms[git_behind_mark]}$gitl"
         fi

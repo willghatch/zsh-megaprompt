@@ -55,6 +55,7 @@ MEGAPROMPT_DISPLAY_P[host]=true
 # this one just determines whether to show the fully qualified domain name
 MEGAPROMPT_DISPLAY_P[longhost]=false
 MEGAPROMPT_DISPLAY_P[tty]=false
+MEGAPROMPT_DISPLAY_P[mercurial]=false
 MEGAPROMPT_DISPLAY_P[git_dirty]=true
 MEGAPROMPT_DISPLAY_P[git_submodule_dirty]=true
 MEGAPROMPT_DISPLAY_P[git_ahead_behind]=true
@@ -103,18 +104,20 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
 
 -mp-getHgBranch() {
     local branch
-    # Don't try if hg is not available
-    if which hg >/dev/null 2>&1; then
-    else
-        return
+    if [[ "${MEGAPROMPT_DISPLAY_P[mercurial]}" = "true" ]]; then
+        # Don't try if hg is not available
+        if which hg >/dev/null 2>&1; then
+        else
+            return
+        fi
+        branch=$(hg branch 2>/dev/null)
+        if [[ -z "$branch" ]]; then
+            return
+        fi
+        echo -n "${MEGAPROMPT_STYLES[hg_branch_brackets]}<"
+        -mp-styleBranch "$branch" hg
+        echo -n "${MEGAPROMPT_STYLES[hg_branch_brackets]}> "
     fi
-    branch=$(hg branch 2>/dev/null)
-    if [[ -z "$branch" ]]; then
-        return
-    fi
-    echo -n "${MEGAPROMPT_STYLES[hg_branch_brackets]}<"
-    -mp-styleBranch "$branch" hg
-    echo -n "${MEGAPROMPT_STYLES[hg_branch_brackets]}> "
 }
 
 -mp-getGitRoot() {

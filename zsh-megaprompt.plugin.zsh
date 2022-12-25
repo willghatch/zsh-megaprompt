@@ -2,7 +2,8 @@
 setopt prompt_subst
 
 typeset -Ag MEGAPROMPT_STYLES
-MEGAPROMPT_STYLES[hrule_char]="%b%F{blue}┅"
+MEGAPROMPT_STYLES[hrule_char]="┅"
+MEGAPROMPT_STYLES[hrule_style]="%b%F{blue}"
 MEGAPROMPT_STYLES[time]="%b%F{cyan}"
 MEGAPROMPT_STYLES[timestr]="%H:%M"
 MEGAPROMPT_STYLES[host]="%B%F{yellow}"
@@ -328,6 +329,7 @@ mp-getTty(){
 
 -mp-get-hrule-string(){
     if [[ "true" = "${MEGAPROMPT_DISPLAY_P[hrule]}" ]]; then
+        echo -n "${MEGAPROMPT_STYLES[hrule_style]}"
         for i in {1..$COLUMNS}; do
             echo -n "${MEGAPROMPT_STYLES[hrule_char]}"
         done

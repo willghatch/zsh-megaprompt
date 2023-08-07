@@ -20,6 +20,8 @@ MEGAPROMPT_STYLES[histnum]="%b%F{blue}"
 MEGAPROMPT_STYLES[prompt]="%b%F{default}"
 MEGAPROMPT_STYLES[prompt_char]="λ"
 MEGAPROMPT_STYLES[git_branch_brackets]="%b%F{grey}"
+MEGAPROMPT_STYLES[git_branch_brackets_left]="["
+MEGAPROMPT_STYLES[git_branch_brackets_right]="]"
 MEGAPROMPT_STYLES[git_default_branch_color]="%b%F{blue}"
 MEGAPROMPT_STYLES[hg_branch_brackets]="%b%F{grey}"
 MEGAPROMPT_STYLES[jobs_number]="%B%F{magenta}"
@@ -33,6 +35,7 @@ MEGAPROMPT_STYLES[git_untracked_mark]=" %b%F{red}U"
 MEGAPROMPT_STYLES[git_no_remote_tracking_mark]=" %b%F{white}N"
 typeset -Ag MEGAPROMPT_GIT_STYLES
 MEGAPROMPT_GIT_STYLES[master]="%b%F{white}"
+MEGAPROMPT_GIT_STYLES[main]="%b%F{white}"
 MEGAPROMPT_GIT_STYLES[dev]="%b%F{green}"
 MEGAPROMPT_GIT_STYLES[develop]="%b%F{green}"
 MEGAPROMPT_GIT_STYLES[release.*]="%b%F{red}"
@@ -142,14 +145,14 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
         return
     fi
     branch=${branch:2}
-    echo -n "${MEGAPROMPT_STYLES[git_branch_brackets]}["
+    echo -n "${MEGAPROMPT_STYLES[git_branch_brackets]}${MEGAPROMPT_STYLES[git_branch_brackets_left]}"
     -mp-styleBranch "$branch" git
     curdir="$(pwd)"
     groot="$(-mp-getGitRoot $curdir)"
     builtin cd "$groot"
     -mp-gitStatus
     builtin cd "$curdir"
-    echo -n "${MEGAPROMPT_STYLES[git_branch_brackets]}] "
+    echo -n "${MEGAPROMPT_STYLES[git_branch_brackets]}${MEGAPROMPT_STYLES[git_branch_brackets_right]} "
 }
 
 -mp-gitStatus(){

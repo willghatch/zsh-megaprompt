@@ -12,10 +12,13 @@ MEGAPROMPT_STYLES[username]="%B%F{green}"
 MEGAPROMPT_STYLES[username_root]="%B%F{red}"
 MEGAPROMPT_STYLES[tty]="%b%F{blue}"
 MEGAPROMPT_STYLES[at]="%b%F{white}"
-MEGAPROMPT_STYLES[dir_owner]="%B%F{blue}"
-MEGAPROMPT_STYLES[dir_group]="%B%F{green}"
-MEGAPROMPT_STYLES[dir_nowrite]="%B%F{red}"
-MEGAPROMPT_STYLES[dir_write]="%B%F{yellow}"
+MEGAPROMPT_STYLES[dir_git_root]="%B"
+MEGAPROMPT_STYLES[dir_vcs_unspecial]="%b"
+MEGAPROMPT_STYLES[post_pwd_reset]="%b%u%s"
+MEGAPROMPT_STYLES[dir_owner]="%F{blue}"
+MEGAPROMPT_STYLES[dir_group]="%F{green}"
+MEGAPROMPT_STYLES[dir_nowrite]="%F{red}"
+MEGAPROMPT_STYLES[dir_write]="%F{yellow}"
 MEGAPROMPT_STYLES[histnum]="%b%F{blue}"
 MEGAPROMPT_STYLES[prompt]="%b%F{default}"
 MEGAPROMPT_STYLES[prompt_char]="λ"
@@ -121,6 +124,14 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
         echo -n "${MEGAPROMPT_STYLES[hg_branch_brackets]}<"
         -mp-styleBranch "$branch" hg
         echo -n "${MEGAPROMPT_STYLES[hg_branch_brackets]}> "
+    fi
+}
+
+-mp-isGitRoot() {
+    if [[ -e "$1/.git" ]]; then
+        return 0;
+    else
+        return 1;
     fi
 }
 
@@ -242,7 +253,7 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     local out
     local dir
     dir="$PWD"
-    out=""
+    out="${MEGAPROMPT_STYLES[post_pwd_reset]}"
     while true; do
         if [[ "$dir" = "$HOME" ]]; then
             echo "$(-mp-getDirColor $dir)~/${out}"
@@ -259,8 +270,14 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
 
 -mp-getDirColor() {
     # I want to know if I'm the owner, and if it's writeable
+    # Also, highlight based on whether the directory is a git repo root
     local dir
     dir="$1"
+    if -mp-isGitRoot "$dir"; then
+        echo -n "${MEGAPROMPT_STYLES[dir_git_root]}"
+    else
+        echo -n "${MEGAPROMPT_STYLES[dir_vcs_unspecial]}"
+    fi
     if [[ -w "$dir" ]]; then
         if [[ -O "$dir" ]]; then
             echo "${MEGAPROMPT_STYLES[dir_owner]}"

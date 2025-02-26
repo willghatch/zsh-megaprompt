@@ -16,9 +16,11 @@ Otherwise, just source the .zsh files
 Features
 --------
 
-- Maximal information
-- Directory coloring based on permissions/ownership
-- shows git/hg branch if in repo
+- maximal information
+- directory coloring based on permissions/ownership
+- directory styling to show git repo roots (default bold)
+- directory styling to show mount points (default reverse video)
+- shows git/hg branch name if in repo
 - shows current keymap indicator (I suggest replacing vi-ins with emacs, then you get the best of both worlds)
 - shows exit status if non-zero
 - shows number of jobs if non-zero
@@ -45,6 +47,7 @@ Configuration
     - <code>hrule</code> do you want a horizontal line to go to the end of the line to visually delimit output from different commands?
     - <code>truncate</code> do you want to truncate the top line if it is longer than your terminal? (this also happens if hrule is on)
     - <code>branch_style_regex</code> do you want to match branch styles using regex (requires zsh to be compiled with PCRE support)?
+    - <code>pwd_mount</code> do you want to have mount points highlighted in the directory display?
 - <code>MEGAPROMPT_GIT_STYLES</code> is an an associative array of regexes to colors for git branch names
 
 These arrays are defined at the top of the source, so just look at it to see what fields exist on the ones I haven't documented.  There are a lot of fields.

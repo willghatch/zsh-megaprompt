@@ -1,3 +1,8 @@
+Megaprompt
+==========
+
+A heroic Zsh prompt from the year 20XX.
+
 Screenshots
 -----------
 

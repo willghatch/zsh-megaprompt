@@ -8,6 +8,7 @@ Screenshots
 
 These screenshots are out of date, but I haven't wanted to bother updating them.
 For example, they don't show styling in the PWD display of git repo root or mount point, and they don't reflect some of the default styles.
+
 ![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/git.png)
 ![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/permissions.png)
 ![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/jobs.png)

@@ -154,7 +154,7 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     local branch
     local groot
     local curdir
-    branch=$(git branch 2>/dev/null | command fgrep '*')
+    branch=$(git branch 2>/dev/null | command grep -F '*')
     if [[ -z "$branch" ]]; then
         return
     fi

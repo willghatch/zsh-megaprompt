@@ -1,17 +1,13 @@
-Depends
--------
+Screenshots
+-----------
 
-You must load [zsh-hooks](https://github.com/willghatch/zsh-hooks) before this plugin.
-
-Install
--------
-
-I recommend using [zgen](https://github.com/tarjoilija/zgen).  Here is how to do it with zgen:
-
-    zgen load willghatch/zsh-hooks
-    zgen load willghatch/zsh-megaprompt
-
-Otherwise, just source the .zsh files
+These screenshots are out of date, but I haven't wanted to bother updating them.
+For example, they don't show styling in the PWD display of git repo root or mount point, and they don't reflect some of the default styles.
+![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/git.png)
+![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/permissions.png)
+![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/jobs.png)
+![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/insert.png)
+![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/normal.png)
 
 Features
 --------
@@ -52,16 +48,20 @@ Configuration
 
 These arrays are defined at the top of the source, so just look at it to see what fields exist on the ones I haven't documented.  There are a lot of fields.
 
-Screenshots
------------
+Depends
+-------
 
-These screenshots are out of date, but I haven't wanted to bother updating them.
-For example, they don't show styling in the PWD display of git repo root or mount point, and they don't reflect some of the default styles.
-![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/git.png)
-![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/permissions.png)
-![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/jobs.png)
-![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/insert.png)
-![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/normal.png)
+You must load [zsh-hooks](https://github.com/willghatch/zsh-hooks) before this plugin.
+
+Install
+-------
+
+I recommend using [zgen](https://github.com/tarjoilija/zgen).  Here is how to do it with zgen:
+
+    zgen load willghatch/zsh-hooks
+    zgen load willghatch/zsh-megaprompt
+
+Otherwise, just source the .zsh files
 
 Issues
 ------

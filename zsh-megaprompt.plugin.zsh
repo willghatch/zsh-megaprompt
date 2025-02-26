@@ -12,6 +12,8 @@ MEGAPROMPT_STYLES[username]="%B%F{green}"
 MEGAPROMPT_STYLES[username_root]="%B%F{red}"
 MEGAPROMPT_STYLES[tty]="%b%F{blue}"
 MEGAPROMPT_STYLES[at]="%b%F{white}"
+MEGAPROMPT_STYLES[dir_mount_point]="%S"
+MEGAPROMPT_STYLES[dir_not_mount_point]="%s"
 MEGAPROMPT_STYLES[dir_git_root]="%B"
 MEGAPROMPT_STYLES[dir_vcs_unspecial]="%b"
 MEGAPROMPT_STYLES[post_pwd_reset]="%b%u%s"
@@ -52,6 +54,7 @@ MEGAPROMPT_KEYMAP_IND[vivis]="%b%K{green}%F{black}V%k"
 MEGAPROMPT_KEYMAP_IND[vivli]="%b%K{green}%F{black}V%k"
 MEGAPROMPT_KEYMAP_IND[keymap_unlisted]="%b%K{white}%F{black}?%k"
 typeset -Ag MEGAPROMPT_DISPLAY_P
+MEGAPROMPT_DISPLAY_P[pwd_mount]=true
 MEGAPROMPT_DISPLAY_P[hrule]=true
 # an hrule forces truncation, but if you want it in any case, here it is
 MEGAPROMPT_DISPLAY_P[truncate]=false
@@ -254,15 +257,19 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     local dir
     dir="$PWD"
     out="${MEGAPROMPT_STYLES[post_pwd_reset]}"
+    local mountPoints
+    if [[ "${MEGAPROMPT_DISPLAY_P[pwd_mount]}" = true ]]; then
+        mountPoints="$(mount -l | awk '{print $3}')"
+    fi
     while true; do
         if [[ "$dir" = "$HOME" ]]; then
-            echo "$(-mp-getDirColor $dir)~/${out}"
+            echo "$(-mp-getDirColor $dir $mountPoints)~/${out}"
             return
         elif [[ "$dir" = "/" ]]; then
-            echo "$(-mp-getDirColor $dir)/${out}"
+            echo "$(-mp-getDirColor $dir $mountPoints)/${out}"
             return
         else
-            out="$(-mp-getDirColor $dir)$(basename $dir)/${out}"
+            out="$(-mp-getDirColor $dir $mountPoints)$(basename $dir)/${out}"
             dir="$(dirname $dir)"
         fi
     done
@@ -273,6 +280,15 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     # Also, highlight based on whether the directory is a git repo root
     local dir
     dir="$1"
+    local mountPoints
+    mountPoints="$2"
+    if [[ "${MEGAPROMPT_DISPLAY_P[pwd_mount]}" = true ]]; then
+        if grep -F -x -q -f <(echo "$mountPoints") <(echo "$dir") >/dev/null 2>&1; then
+            echo -n "${MEGAPROMPT_STYLES[dir_mount_point]}"
+        else
+            echo -n "${MEGAPROMPT_STYLES[dir_not_mount_point]}"
+        fi
+    fi
     if -mp-isGitRoot "$dir"; then
         echo -n "${MEGAPROMPT_STYLES[dir_git_root]}"
     else

@@ -56,6 +56,7 @@ Screenshots
 -----------
 
 These screenshots are out of date, but I haven't wanted to bother updating them.
+For example, they don't show styling in the PWD display of git repo root or mount point, and they don't reflect some of the default styles.
 ![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/git.png)
 ![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/permissions.png)
 ![Example](https://github.com/willghatch/zsh-megaprompt/raw/master/img/jobs.png)
@@ -73,3 +74,24 @@ Issues
   therefore don't span the whole line like they are supposed to.
 - The PCRE module is required for git branch coloring.  As far as I know all distributions include it.
 
+Why
+---
+
+I have occasionally updated this prompt because I use it.
+Why not use something like [Starship](https://starship.rs/) instead?
+Most people will probably prefer something like Starship.
+But Megaprompt predated Starship, and at the time I wrote it I didn't like any of the alternatives I saw.
+Moreover, Megaprompt still has some features that I have yet to see on other prompts, such as styling the PWD display to show extra information (eg. ownership, permissions, mount points, and git repo roots).
+I like these features, so I keep using (and even on rare occasions updating) this prompt.
+
+Future Work
+-----------
+
+I would like to split my prompt into:
+
+1. static information about the previous command, with maximal information.  This should include the date and time the process ended, its run time, exit status, etc.
+2. dynamic information while composing a new command.  This section should update to, for example, show an indicator of the current input state (keymap), the current time, current git data, etc.  I'm not certain how updates should be handled -- I don't want constant updating of prompts that I won't look at for hours.  But I find it mildly grating when I go back to a shell session that has a prompt that has become out of date (eg. with respect to git status).  It should also only show information that I care about while composing a new command.
+3. static information about the new command.  This should replace the dynamic information at the time that the command is run.  It likely should show much more information than the dynamic prompt.  For example, it should show the date and time that the command was run, so I can easily tell how long a program has been running.  There is a notable problem with typical prompts showing the time that you can typically tell either when a command was run, or (more likely) when the previous command finished.  I want to be able to see both of these when I look at historical data in a shell session.
+
+Parts 1 and 3 should potentially be shown together, which either requires some duplication or fancy terminal integration (of questionable wisdom) to edit historical prompts or (possibly wiser) that has a different paradigm than just showing ANSI code output from commands.
+But I find that it is not infrequent that I want more historical data when I look at shell prompts, especially when I'm coming back to a shell session that I left idle, especially one that I left on a remote machine (eg. a tmux session that I disconnected from but am coming back to, potentially days later).

@@ -391,6 +391,12 @@ mp-getTty(){
     fi
 }
 
+-mp-get-custom-pre-lines(){
+    if [[ -n "${MEGAPROMPT_PRE_LINES_FUNCTION}" ]]; then
+        "${MEGAPROMPT_PRE_LINES_FUNCTION}"
+    fi
+}
+
 mp-updatePrompt() {
     local -A s
     set -A s ${(kv)MEGAPROMPT_STYLES}
@@ -400,7 +406,7 @@ mp-updatePrompt() {
     fi
 
     # you can set the ending character of the hrule by putting it between the >> that set truncation.
-    PS1="\$(-mp-get-truncate-start)\$(-mp-get-custom-pre)\$(-mp-getTime)\$(-mp-user-host-tty)\$(-mp-getGitBranch)\$(-mp-getHgBranch)\$(-mp-getPwd)\$(-mp-getJobs)${PS1_cmd_stat} ${s[hrule]}$(-mp-get-hrule-string)\$(-mp-get-truncate-end)
+    PS1="\$(-mp-get-custom-pre-lines)\$(-mp-get-truncate-start)\$(-mp-get-custom-pre)\$(-mp-getTime)\$(-mp-user-host-tty)\$(-mp-getGitBranch)\$(-mp-getHgBranch)\$(-mp-getPwd)\$(-mp-getJobs)${PS1_cmd_stat} ${s[hrule]}$(-mp-get-hrule-string)\$(-mp-get-truncate-end)
 ${k} $(-mp-getHistory)${s[prompt]}${s[prompt_char]} "
     if zle; then
         zle reset-prompt

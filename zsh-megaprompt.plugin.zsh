@@ -154,11 +154,11 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     local branch
     local groot
     local curdir
-    branch=$(git branch 2>/dev/null | command grep -F '*')
+    branch=$(git branch --show-current 2>/dev/null)
     if [[ -z "$branch" ]]; then
         return
     fi
-    branch=${branch:2}
+    branch=${branch}
     echo -n "${MEGAPROMPT_STYLES[git_branch_brackets]}${MEGAPROMPT_STYLES[git_branch_brackets_left]}"
     -mp-styleBranch "$branch" git
     curdir="$(pwd)"

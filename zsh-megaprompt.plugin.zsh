@@ -322,7 +322,9 @@ mp-getUser(){
 }
 
 mp-getHost(){
-    if [[ "$MEGAPROMPT_DISPLAY_P[longhost]" = "true" ]]; then
+    if [[ -n "$MEGAPROMPT_OVERRIDE_HOSTNAME" ]]; then
+        echo "${MEGAPROMPT_STYLES[host]}$MEGAPROMPT_OVERRIDE_HOSTNAME"
+    elif [[ "$MEGAPROMPT_DISPLAY_P[longhost]" = "true" ]]; then
         echo "${MEGAPROMPT_STYLES[host]}$HOST"
     else
         # $(hostname -s) was giving weird errors on my laptop, so use this instead.

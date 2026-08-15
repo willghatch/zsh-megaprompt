@@ -38,6 +38,9 @@ MEGAPROMPT_STYLES[git_dirty_mark]=" %b%F{red}D"
 MEGAPROMPT_STYLES[git_submodule_dirty_mark]=" %b%F{red}S"
 MEGAPROMPT_STYLES[git_untracked_mark]=" %b%F{red}U"
 MEGAPROMPT_STYLES[git_no_remote_tracking_mark]=" %b%F{white}N"
+MEGAPROMPT_STYLES[git_timeout_mark]=" %b%F{red}T"
+MEGAPROMPT_STYLES[git_branch_unknown]="%b%F{red}?"
+MEGAPROMPT_STYLES[extras_off_mark]="%b%F{red}(no extras) "
 typeset -Ag MEGAPROMPT_GIT_STYLES
 MEGAPROMPT_GIT_STYLES[master]="%b%F{white}"
 MEGAPROMPT_GIT_STYLES[main]="%b%F{white}"
@@ -54,6 +57,9 @@ MEGAPROMPT_KEYMAP_IND[vivis]="%b%K{green}%F{black}V%k"
 MEGAPROMPT_KEYMAP_IND[vivli]="%b%K{green}%F{black}V%k"
 MEGAPROMPT_KEYMAP_IND[keymap_unlisted]="%b%K{white}%F{black}?%k"
 typeset -Ag MEGAPROMPT_DISPLAY_P
+# Master switch for everything that inspects the filesystem or a VCS.  Turn it
+# off (see mp-extras) when the current directory makes those checks slow.
+MEGAPROMPT_DISPLAY_P[extra_analysis]=true
 MEGAPROMPT_DISPLAY_P[pwd_mount]=true
 MEGAPROMPT_DISPLAY_P[hrule]=true
 # an hrule forces truncation, but if you want it in any case, here it is
@@ -76,6 +82,153 @@ MEGAPROMPT_DISPLAY_P[branch_style_regex]=true
 #MEGAPROMPT_DISPLAY_P[newline]=true
 #MEGAPROMPT_DISPLAY_P[keymap]=true
 typeset -Ag MEGAPROMPT_MISC
+# Durations in seconds, which may be fractional, for each command that can be
+# slow.  The [default] entry is used for any key that is not set.
+# A duration of 0 (or an empty one) means "wait as long as it takes".
+typeset -Ag MEGAPROMPT_TIMEOUTS
+MEGAPROMPT_TIMEOUTS[default]=1
+#MEGAPROMPT_TIMEOUTS[git_branch]=1
+#MEGAPROMPT_TIMEOUTS[git_bare_check]=1
+#MEGAPROMPT_TIMEOUTS[git_ahead_behind]=1
+#MEGAPROMPT_TIMEOUTS[git_no_remote_tracking]=1
+#MEGAPROMPT_TIMEOUTS[git_dirty]=1
+#MEGAPROMPT_TIMEOUTS[git_submodule_dirty]=1
+#MEGAPROMPT_TIMEOUTS[git_untracked]=1
+#MEGAPROMPT_TIMEOUTS[hg_branch]=1
+#MEGAPROMPT_TIMEOUTS[pwd_mount]=1
+
+# Whether timeouts can be imposed at all: "native" or "none".  zsh does the
+# timing itself, which runs nothing besides the command being timed.  timeout(1)
+# would be another process for every check, and some implementations of it
+# (uutils) cost about 100ms per call however quick the command is, which is
+# worse than the slowness being avoided.
+-mp-detect-timeout-method(){
+    if zmodload zsh/system 2>/dev/null && zmodload zsh/datetime 2>/dev/null; then
+        MEGAPROMPT_MISC[timeout_method]=native
+    else
+        MEGAPROMPT_MISC[timeout_method]=none
+    fi
+}
+if [[ -z "${MEGAPROMPT_MISC[timeout_method]+set}" ]]; then
+    -mp-detect-timeout-method
+fi
+
+# Run a command, giving up on it after the duration configured for the given
+# key.  Output and exit status are those of the command; a command that is
+# given up on has a status for which -mp-timed-out-p is true.
+-mp-timeout-command(){
+    local key
+    local duration
+    key="$1"
+    shift
+    duration="${MEGAPROMPT_TIMEOUTS[$key]:-${MEGAPROMPT_TIMEOUTS[default]}}"
+    if [[ -z "$duration" || "$duration" = 0 || \
+          "${MEGAPROMPT_MISC[timeout_method]}" != native ]]; then
+        "$@"
+        return
+    fi
+    -mp-run-with-deadline "$duration" "$@"
+}
+
+# The command becomes a coprocess, which is where both its output and its exit
+# status come from, and sysread's own timeout is what bounds the wait.
+-mp-run-with-deadline(){
+    setopt localoptions no_monitor no_notify
+    local duration
+    local deadline
+    local remaining
+    local buf
+    local out
+    local pid
+    local fd
+    local finished
+    duration="$1"
+    shift
+    coproc { "$@" < /dev/null }
+    pid=$!
+    exec {fd}<&p
+    out=""
+    finished=false
+    deadline=$(( EPOCHREALTIME + duration ))
+    while true; do
+        remaining=$(( deadline - EPOCHREALTIME ))
+        if (( remaining <= 0 )); then
+            break
+        fi
+        buf=""
+        sysread -t $remaining -i $fd buf
+        case $? in
+            0)
+                # Output has to be read as it comes, or a command with more
+                # output than fits in the pipe would block until read from.
+                out+="$buf"
+                ;;
+            4)
+                # sysread timed out.
+                break
+                ;;
+            *)
+                # End of file, or an error we cannot read past.
+                finished=true
+                break
+                ;;
+        esac
+    done
+    exec {fd}<&-
+    if [[ "$finished" != true ]]; then
+        # Don't wait for it to die.  A command that ignores the signal must not
+        # be able to hold up the prompt any longer than it already has.
+        kill -TERM "$pid" 2>/dev/null
+        return 124
+    fi
+    printf '%s' "$out"
+    wait "$pid"
+}
+
+-mp-timed-out-p(){
+    # 124 is what timeout(1) reports when it gives up, kept for familiarity.
+    [[ "$1" -eq 124 ]]
+}
+
+# While the extras are off the prompt looks the same as it would in a directory
+# with nothing extra to report, so say which it is.
+-mp-getExtrasIndicator(){
+    if [[ "${MEGAPROMPT_DISPLAY_P[extra_analysis]}" != "true" ]]; then
+        echo -n "${MEGAPROMPT_STYLES[extras_off_mark]}"
+    fi
+}
+
+# Turn the extra (potentially slow) data gathering on or off.
+# Usage: mp-extras [on|off|toggle|status]
+mp-extras(){
+    case "${1:-toggle}" in
+        on|true)
+            MEGAPROMPT_DISPLAY_P[extra_analysis]=true
+            ;;
+        off|false)
+            MEGAPROMPT_DISPLAY_P[extra_analysis]=false
+            ;;
+        toggle)
+            if [[ "${MEGAPROMPT_DISPLAY_P[extra_analysis]}" = true ]]; then
+                MEGAPROMPT_DISPLAY_P[extra_analysis]=false
+            else
+                MEGAPROMPT_DISPLAY_P[extra_analysis]=true
+            fi
+            ;;
+        status)
+            ;;
+        *)
+            print -u2 "mp-extras: expected one of: on, off, toggle, status"
+            return 1
+            ;;
+    esac
+    if [[ "${MEGAPROMPT_DISPLAY_P[extra_analysis]}" = true ]]; then
+        print "megaprompt extra analysis: on"
+    else
+        print "megaprompt extra analysis: off"
+    fi
+    mp-updatePrompt
+}
 
 # TODO - is there a way to get the last USER command exit status in a function?
 # It's nearly the last thing that I'm not sure how to turn into a function so I can
@@ -114,13 +267,16 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
 
 -mp-getHgBranch() {
     local branch
+    if [[ "${MEGAPROMPT_DISPLAY_P[extra_analysis]}" != "true" ]]; then
+        return
+    fi
     if [[ "${MEGAPROMPT_DISPLAY_P[mercurial]}" = "true" ]]; then
         # Don't try if hg is not available
         if which hg >/dev/null 2>&1; then
         else
             return
         fi
-        branch=$(hg branch 2>/dev/null)
+        branch=$(-mp-timeout-command hg_branch hg branch 2>/dev/null)
         if [[ -z "$branch" ]]; then
             return
         fi
@@ -154,7 +310,19 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     local branch
     local groot
     local curdir
-    branch=$(git branch 2>/dev/null | command grep -F '*')
+    if [[ "${MEGAPROMPT_DISPLAY_P[extra_analysis]}" != "true" ]]; then
+        return
+    fi
+    branch=$(-mp-timeout-command git_branch git branch 2>/dev/null)
+    if -mp-timed-out-p $?; then
+        # Whether this is a repo at all is now unknown, but a git command that
+        # is too slow to finish is itself worth showing.
+        echo -n "${MEGAPROMPT_STYLES[git_branch_brackets]}${MEGAPROMPT_STYLES[git_branch_brackets_left]}"
+        echo -n "${MEGAPROMPT_STYLES[git_branch_unknown]}"
+        echo -n "${MEGAPROMPT_STYLES[git_branch_brackets]}${MEGAPROMPT_STYLES[git_branch_brackets_right]} "
+        return
+    fi
+    branch=$(echo "$branch" | command grep -F '*')
     if [[ -z "$branch" ]]; then
         return
     fi
@@ -174,45 +342,79 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     local gitl
     local gitr
     local gitbare
+    local st
+    local timedout
+    local summary
     local -A ms
-    set -A ms ${(kv)MEGAPROMPT_STYLES}
-    gitbare="$(git rev-parse --is-bare-repository)"
+    set -A ms "${(kv)MEGAPROMPT_STYLES[@]}"
+    # Each check that is given up on leaves its piece of the status unknown.
+    # An unknown answer must not be reported as a known one, so it contributes
+    # the timeout mark instead of its own mark.
+    timedout=false
+    gitbare="$(-mp-timeout-command git_bare_check git rev-parse --is-bare-repository)"
+    if -mp-timed-out-p $?; then
+        echo -n "${ms[git_timeout_mark]}"
+        return
+    fi
     if [[ "${MEGAPROMPT_DISPLAY_P[git_ahead_behind]}" = true ]]; then
-        gitlr=$(git rev-list --left-right @{u}...HEAD 2>/dev/null)
-        if [[ -n "$gitlr" ]]; then
-            echo -n " "
-        fi
-        # tr is used to remove wc's leading white space for our BSD friends
-        gitl=$(echo "$gitlr" | command grep -E '^<' | wc -l | tr -d " ")
-        gitr=$(echo "$gitlr" | command grep -E '^>' | wc -l | tr -d " ")
-        if [[ 0 -ne "$gitl" ]]; then
-            echo -n "${ms[git_behind_mark]}$gitl"
-        fi
-        if [[ 0 -ne "$gitr" ]]; then
-            echo -n "${ms[git_ahead_mark]}$gitr"
+        gitlr=$(-mp-timeout-command git_ahead_behind git rev-list --left-right @{u}...HEAD 2>/dev/null)
+        if -mp-timed-out-p $?; then
+            timedout=true
+        else
+            if [[ -n "$gitlr" ]]; then
+                echo -n " "
+            fi
+            # tr is used to remove wc's leading white space for our BSD friends
+            gitl=$(echo "$gitlr" | command grep -E '^<' | wc -l | tr -d " ")
+            gitr=$(echo "$gitlr" | command grep -E '^>' | wc -l | tr -d " ")
+            if [[ 0 -ne "$gitl" ]]; then
+                echo -n "${ms[git_behind_mark]}$gitl"
+            fi
+            if [[ 0 -ne "$gitr" ]]; then
+                echo -n "${ms[git_ahead_mark]}$gitr"
+            fi
         fi
     fi
     if [[ "${MEGAPROMPT_DISPLAY_P[git_no_remote_tracking]}" = true ]]; then
-        git rev-parse --abbrev-ref @{upstream} 1>/dev/null 2>&1 || \
+        -mp-timeout-command git_no_remote_tracking git rev-parse --abbrev-ref @{upstream} 1>/dev/null 2>&1
+        st=$?
+        if -mp-timed-out-p $st; then
+            timedout=true
+        elif [[ 0 -ne "$st" ]]; then
             echo -n "${ms[git_no_remote_tracking_mark]}"
+        fi
     fi
     if [[ "$gitbare" = false ]]; then
         if [[ "${MEGAPROMPT_DISPLAY_P[git_dirty]}" = true ]]; then
-            git diff --quiet --ignore-submodules HEAD 1>/dev/null 2>&1 || \
+            -mp-timeout-command git_dirty git diff --quiet --ignore-submodules HEAD 1>/dev/null 2>&1
+            st=$?
+            if -mp-timed-out-p $st; then
+                timedout=true
+            elif [[ 0 -ne "$st" ]]; then
                 echo -n "${ms[git_dirty_mark]}"
+            fi
         fi
         if [[ "${MEGAPROMPT_DISPLAY_P[git_submodule_dirty]}" = true ]]; then
-            if [[ ! $(git submodule summary -n 1 | wc -c) -eq 0 ]]; then
+            summary="$(-mp-timeout-command git_submodule_dirty git submodule summary -n 1 2>/dev/null)"
+            if -mp-timed-out-p $?; then
+                timedout=true
+            elif [[ -n "$summary" ]]; then
                 echo -n "${ms[git_submodule_dirty_mark]}"
             fi
         fi
         if [[ "${MEGAPROMPT_DISPLAY_P[git_untracked]}" = true ]]; then
             # piping to "sed q1" may be faster (I don't actually know),
             # but it breaks on BSD (or mac).
-            if [[ -n "$(git ls-files --other --directory --exclude-standard)" ]]; then
+            summary="$(-mp-timeout-command git_untracked git ls-files --other --directory --exclude-standard)"
+            if -mp-timed-out-p $?; then
+                timedout=true
+            elif [[ -n "$summary" ]]; then
                 echo -n "${ms[git_untracked_mark]}"
             fi
         fi
+    fi
+    if [[ "$timedout" = true ]]; then
+        echo -n "${ms[git_timeout_mark]}"
     fi
 }
 
@@ -220,7 +422,7 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     local branch
     local -A mgs
     local pcre_on_p
-    set -A mgs ${(kv)MEGAPROMPT_GIT_STYLES}
+    set -A mgs "${(kv)MEGAPROMPT_GIT_STYLES[@]}"
     branch=$1
     pcre_on_p="$options[rematchpcre]"
 
@@ -255,21 +457,28 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
 -mp-getPwd() {
     local out
     local dir
+    local color
+    local extras
     dir="$PWD"
     out="${MEGAPROMPT_STYLES[post_pwd_reset]}"
+    extras="${MEGAPROMPT_DISPLAY_P[extra_analysis]}"
     local mountPoints
-    if [[ "${MEGAPROMPT_DISPLAY_P[pwd_mount]}" = true ]]; then
-        mountPoints="$(mount -l | awk '{print $3}')"
+    if [[ "$extras" = true && "${MEGAPROMPT_DISPLAY_P[pwd_mount]}" = true ]]; then
+        mountPoints="$(-mp-timeout-command pwd_mount mount -l | awk '{print $3}')"
     fi
     while true; do
+        color=""
+        if [[ "$extras" = true ]]; then
+            color="$(-mp-getDirColor $dir $mountPoints)"
+        fi
         if [[ "$dir" = "$HOME" ]]; then
-            echo "$(-mp-getDirColor $dir $mountPoints)~/${out}"
+            echo "${color}~/${out}"
             return
         elif [[ "$dir" = "/" ]]; then
-            echo "$(-mp-getDirColor $dir $mountPoints)/${out}"
+            echo "${color}/${out}"
             return
         else
-            out="$(-mp-getDirColor $dir $mountPoints)$(basename $dir)/${out}"
+            out="${color}$(basename $dir)/${out}"
             dir="$(dirname $dir)"
         fi
     done
@@ -338,9 +547,9 @@ mp-getTty(){
 
 -mp-user-host-tty(){
     local -A p
-    set -A p ${(kv)MEGAPROMPT_DISPLAY_P}
+    set -A p "${(kv)MEGAPROMPT_DISPLAY_P[@]}"
     local -A s
-    set -A s ${(kv)MEGAPROMPT_STYLES}
+    set -A s "${(kv)MEGAPROMPT_STYLES[@]}"
     if [ ! "true" = "${p[username]}" -a \
          ! "true" = "${p[host]}" -a \
          ! "true" = "${p[tty]}" ]; then
@@ -401,14 +610,14 @@ mp-getTty(){
 
 mp-updatePrompt() {
     local -A s
-    set -A s ${(kv)MEGAPROMPT_STYLES}
+    set -A s "${(kv)MEGAPROMPT_STYLES[@]}"
     local k=$MEGAPROMPT_KEYMAP_IND[$ZSH_CUR_KEYMAP]
     if [[ -z "$k" ]]; then
         k=$MEGAPROMPT_KEYMAP_IND[keymap_unlisted]
     fi
 
     # you can set the ending character of the hrule by putting it between the >> that set truncation.
-    PS1="\$(-mp-get-custom-pre-lines)\$(-mp-get-truncate-start)\$(-mp-get-custom-pre)\$(-mp-getTime)\$(-mp-user-host-tty)\$(-mp-getGitBranch)\$(-mp-getHgBranch)\$(-mp-getPwd)\$(-mp-getJobs)${PS1_cmd_stat} ${s[hrule]}$(-mp-get-hrule-string)\$(-mp-get-truncate-end)
+    PS1="\$(-mp-get-custom-pre-lines)\$(-mp-get-truncate-start)\$(-mp-get-custom-pre)\$(-mp-getTime)\$(-mp-user-host-tty)\$(-mp-getExtrasIndicator)\$(-mp-getGitBranch)\$(-mp-getHgBranch)\$(-mp-getPwd)\$(-mp-getJobs)${PS1_cmd_stat} ${s[hrule]}$(-mp-get-hrule-string)\$(-mp-get-truncate-end)
 ${k} $(-mp-getHistory)${s[prompt]}${s[prompt_char]} "
     if zle; then
         zle reset-prompt

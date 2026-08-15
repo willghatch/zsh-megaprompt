@@ -30,6 +30,8 @@ Features
 - shows history number (useful for history expansion)
 - shows user/host
 - configure which of these are displayed
+- gives up on slow commands after a configurable timeout
+- a single switch to turn off all of the extra data gathering
 
 Configuration
 -------------
@@ -38,6 +40,7 @@ Configuration
 - <code>MEGAPROMPT_KEYMAP_IND</code> is an associative array of keymap names to their indicators
 - <code>MEGAPROMPT_PRE_FUNCTION</code> is the name of a function to call to generate a prefix to the prompt.  This allows you to add something custom before the start of the prompt.
 - <code>MEGAPROMPT_DISPLAY_P</code> is an associative array of display pieces to "true" or "false"
+    - <code>extra_analysis</code> do you want any of the extra data at all?  This is the master switch described under Slow Directories below.
     - <code>git_dirty</code> do you want to be informed when your git repo is dirty?  (note: this may be slow)
     - <code>git_untracked</code> do you want to be informed when your git repo is has untracked files?
     - <code>git_ahead_behind</code> do you want to be informed when your git repo ahead or behind of its tracking branch?
@@ -53,6 +56,43 @@ Configuration
 - <code>MEGAPROMPT_GIT_STYLES</code> is an an associative array of regexes to colors for git branch names
 
 These arrays are defined at the top of the source, so just look at it to see what fields exist on the ones I haven't documented.  There are a lot of fields.
+
+Slow Directories
+----------------
+
+Gathering all of this information means running commands (git, hg, mount, stat) that are fast in most places, but not everywhere.
+A remote mount, a very large repository, or a repository with many submodules can make them slow enough to make the shell feel unresponsive.
+There are two ways to deal with that.
+
+First, each command that can be slow is given a limited amount of time to finish.
+<code>MEGAPROMPT_TIMEOUTS</code> is an associative array of durations in seconds (fractions are fine), keyed by the thing being looked up (`git_branch`, `git_dirty`, `git_untracked`, `pwd_mount`, and so on -- they are listed at the top of the source).
+Any key that is not set uses <code>MEGAPROMPT_TIMEOUTS[default]</code>, which is 1 second.
+A duration of `0` means to wait as long as it takes, which is how the prompt behaved before timeouts existed.
+
+When a check is given up on, its answer is unknown, so the prompt shows <code>git_timeout_mark</code> (default `T`) rather than the mark for the check itself.
+A `D` means the repo is dirty; a `T` means the prompt does not know.
+Likewise, if the branch name itself could not be looked up in time, <code>git_branch_unknown</code> (default `?`) is shown in place of the branch name.
+
+The waiting is done by zsh itself, so nothing runs but the command being timed.
+This needs the `zsh/system` and `zsh/datetime` modules; without them nothing is timed out.
+<code>MEGAPROMPT_MISC[timeout_method]</code> is worked out at load time and is either `native` or `none`; set it to `none` yourself to turn all of the timeouts off.
+
+`timeout(1)` is deliberately not used, even as a fallback.
+It would be another process for every check, and the uutils implementation of it -- which some distributions install as `timeout` -- takes about 100ms per call no matter how quick the command is, which costs more than the slowness being avoided.
+
+Second, when even waiting for the timeouts is too slow, `mp-extras` turns off all of the extra data gathering: git, hg, and the mount point, git root, ownership, and permission styling of the directory display.
+
+    mp-extras          # toggle
+    mp-extras off      # turn it off
+    mp-extras on       # turn it back on
+    mp-extras status   # just say which it is
+
+While the extras are off, <code>extras_off_mark</code> is shown in the prompt, so that a prompt with nothing extra in it can be told apart from a directory with nothing extra to report.
+
+Tests
+-----
+
+    zsh test/megaprompt-test.zsh
 
 Depends
 -------

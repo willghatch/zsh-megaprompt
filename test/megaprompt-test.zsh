@@ -82,6 +82,28 @@ suite-setup() {
     )
 }
 
+# Keep the user's git configuration out of the repos the tests build and inspect.
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
+export GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@example.com
+export GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=test@example.com
+# Submodules are cloned from local paths, which git refuses by default.
+export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=protocol.file.allow GIT_CONFIG_VALUE_0=always
+
+# make-repo DIR: a repo at DIR with one commit.
+make-repo() {
+    git init -q -b main "$1"
+    git -C "$1" commit -q --allow-empty -m 'initial'
+}
+
+# make-repo-with-submodule DIR: a repo at DIR whose submodule "sub" is a clone
+# of DIR-upstream, with everything pushed.
+make-repo-with-submodule() {
+    make-repo "$1-upstream"
+    make-repo "$1"
+    git -C "$1" submodule -q add "$1-upstream" sub
+    git -C "$1" commit -q -m 'add submodule'
+}
+
 suite-teardown() {
     [[ -n "$SANDBOX" ]] && rm -rf "$SANDBOX"
 }
@@ -90,6 +112,9 @@ test-setup() {
     # Use plain ASCII markers so that assertions are readable.
     MEGAPROMPT_STYLES[git_dirty_mark]="<DIRTY>"
     MEGAPROMPT_STYLES[git_submodule_dirty_mark]="<SUBDIRTY>"
+    MEGAPROMPT_STYLES[git_submodule_unpushed_mark]="<SUBUNPUSHED>"
+    MEGAPROMPT_STYLES[git_submodule_unpushed_mark_end]="</SUBUNPUSHED>"
+    MEGAPROMPT_STYLES[git_worktrees_mark]="<WORKTREES>"
     MEGAPROMPT_STYLES[git_untracked_mark]="<UNTRACKED>"
     MEGAPROMPT_STYLES[git_no_remote_tracking_mark]="<NOREMOTE>"
     MEGAPROMPT_STYLES[git_timeout_mark]="<TIMEOUT>"
@@ -261,6 +286,100 @@ test-git-branch-shown-without-timeouts() {
 }
 
 ################################################################################
+# worktrees
+################################################################################
+
+# The usual single worktree is not worth any space in the prompt.
+test-worktree-count-shown-only-when-not-one() {
+    local out
+    local repo="$SANDBOX/worktrees"
+    make-repo "$repo"
+    cd "$repo"
+    MEGAPROMPT_TIMEOUTS[default]=20
+    out="$(-mp-gitStatus)"
+    assert-not-contains "$out" "<WORKTREES>" "a lone worktree should not be shown"
+    git worktree add -q "$SANDBOX/worktrees-other"
+    out="$(-mp-gitStatus)"
+    assert-contains "$out" "<WORKTREES>2" "both worktrees should be counted"
+}
+
+################################################################################
+# submodules with commits that are not on any remote
+################################################################################
+
+# The danger is pushing an outer repo that pins a submodule commit nobody else
+# can fetch.  A submodule that has merely moved ahead locally is just being
+# worked on, until its new commit is staged or committed in the outer repo.
+test-submodule-unpushed-pin-is-reported() {
+    local out
+    local repo="$SANDBOX/unpushed"
+    make-repo-with-submodule "$repo"
+    cd "$repo"
+    MEGAPROMPT_TIMEOUTS[default]=20
+    out="$(-mp-gitStatus)"
+    assert-not-contains "$out" "<SUBUNPUSHED>" "everything is pushed"
+
+    git -C sub commit -q --allow-empty -m 'local only'
+    out="$(-mp-gitStatus)"
+    assert-not-contains "$out" "<SUBUNPUSHED>" "the outer repo does not pin the new commit yet"
+
+    git add sub
+    out="$(-mp-gitStatus)"
+    assert-contains "$out" "<SUBUNPUSHED>1</SUBUNPUSHED>" "a staged pin should be reported"
+
+    git commit -q -m 'pin local-only commit'
+    out="$(-mp-gitStatus)"
+    assert-contains "$out" "<SUBUNPUSHED>1</SUBUNPUSHED>" "a committed pin should be reported"
+
+    git -C sub push -q origin HEAD:refs/heads/pushed
+    out="$(-mp-gitStatus)"
+    assert-not-contains "$out" "<SUBUNPUSHED>" "the pinned commit is on the remote now"
+}
+
+# With no remote at all, nobody else can get the pinned commit.
+test-submodule-without-remote-is-reported() {
+    local out
+    local repo="$SANDBOX/noremote"
+    make-repo-with-submodule "$repo"
+    cd "$repo"
+    git -C sub remote remove origin
+    MEGAPROMPT_TIMEOUTS[default]=20
+    out="$(-mp-gitStatus)"
+    assert-contains "$out" "<SUBUNPUSHED>1</SUBUNPUSHED>" "a pin with no remote should be reported"
+}
+
+test-nested-submodule-unpushed-pins-are-counted() {
+    local out
+    local repo="$SANDBOX/nested"
+    make-repo-with-submodule "$repo"
+    # Give the submodule a submodule of its own, then pin unpushed commits at
+    # both levels.
+    make-repo "$repo-inner-upstream"
+    git -C "$repo/sub" submodule -q add "$repo-inner-upstream" inner
+    git -C "$repo/sub/inner" commit -q --allow-empty -m 'local only'
+    git -C "$repo/sub" add inner
+    git -C "$repo/sub" commit -q -m 'pin local-only inner commit'
+    git -C "$repo" add sub
+    cd "$repo"
+    MEGAPROMPT_TIMEOUTS[default]=20
+    out="$(-mp-gitStatus)"
+    assert-contains "$out" "<SUBUNPUSHED>2</SUBUNPUSHED>" "both levels should be counted"
+}
+
+test-submodule-unpushed-timeout-is-not-reported-as-clean() {
+    local out
+    local repo="$SANDBOX/unpushed-timeout"
+    make-repo-with-submodule "$repo"
+    git -C "$repo/sub" remote remove origin
+    cd "$repo"
+    MEGAPROMPT_TIMEOUTS[default]=20
+    MEGAPROMPT_TIMEOUTS[git_submodule_unpushed]=0.000001
+    out="$(-mp-gitStatus)"
+    assert-contains "$out" "<TIMEOUT>" "the timeout should be reported"
+    assert-not-contains "$out" "<SUBUNPUSHED>" "the answer is unknown after a timeout"
+}
+
+################################################################################
 # extra_analysis toggle
 ################################################################################
 
@@ -359,6 +478,11 @@ main() {
     run-test test-git-status-reports-timeout-instead-of-guessing
     run-test test-git-branch-timeout-shows-unknown-branch
     run-test test-git-branch-shown-without-timeouts
+    run-test test-worktree-count-shown-only-when-not-one
+    run-test test-submodule-unpushed-pin-is-reported
+    run-test test-submodule-without-remote-is-reported
+    run-test test-nested-submodule-unpushed-pins-are-counted
+    run-test test-submodule-unpushed-timeout-is-not-reported-as-clean
     run-test test-extras-off-skips-git-branch
     run-test test-extras-off-skips-hg-branch
     run-test test-extras-off-skips-directory-inspection

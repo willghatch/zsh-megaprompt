@@ -36,6 +36,9 @@ MEGAPROMPT_STYLES[git_ahead_mark]="%b%F{white}▲%F{cyan}"
 MEGAPROMPT_STYLES[git_behind_mark]="%b%F{white}▼%F{cyan}"
 MEGAPROMPT_STYLES[git_dirty_mark]=" %b%F{red}D"
 MEGAPROMPT_STYLES[git_submodule_dirty_mark]=" %b%F{red}S"
+MEGAPROMPT_STYLES[git_submodule_unpushed_mark]=" %b%K{red}%F{black}S▲"
+MEGAPROMPT_STYLES[git_submodule_unpushed_mark_end]="%k"
+MEGAPROMPT_STYLES[git_worktrees_mark]=" %b%F{white}W%F{cyan}"
 MEGAPROMPT_STYLES[git_untracked_mark]=" %b%F{red}U"
 MEGAPROMPT_STYLES[git_no_remote_tracking_mark]=" %b%F{white}N"
 MEGAPROMPT_STYLES[git_timeout_mark]=" %b%F{red}T"
@@ -74,8 +77,10 @@ MEGAPROMPT_DISPLAY_P[tty]=false
 MEGAPROMPT_DISPLAY_P[mercurial]=false
 MEGAPROMPT_DISPLAY_P[git_dirty]=true
 MEGAPROMPT_DISPLAY_P[git_submodule_dirty]=true
+MEGAPROMPT_DISPLAY_P[git_submodule_unpushed]=true
 MEGAPROMPT_DISPLAY_P[git_ahead_behind]=true
 MEGAPROMPT_DISPLAY_P[git_untracked]=true
+MEGAPROMPT_DISPLAY_P[git_worktrees]=true
 MEGAPROMPT_DISPLAY_P[git_no_remote_tracking]=true
 MEGAPROMPT_DISPLAY_P[branch_style_regex]=true
 #MEGAPROMPT_DISPLAY_P[directory]=true
@@ -93,7 +98,9 @@ MEGAPROMPT_TIMEOUTS[default]=1
 #MEGAPROMPT_TIMEOUTS[git_no_remote_tracking]=1
 #MEGAPROMPT_TIMEOUTS[git_dirty]=1
 #MEGAPROMPT_TIMEOUTS[git_submodule_dirty]=1
+#MEGAPROMPT_TIMEOUTS[git_submodule_unpushed]=1
 #MEGAPROMPT_TIMEOUTS[git_untracked]=1
+#MEGAPROMPT_TIMEOUTS[git_worktrees]=1
 #MEGAPROMPT_TIMEOUTS[hg_branch]=1
 #MEGAPROMPT_TIMEOUTS[pwd_mount]=1
 
@@ -337,6 +344,59 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
     echo -n "${MEGAPROMPT_STYLES[git_branch_brackets]}${MEGAPROMPT_STYLES[git_branch_brackets_right]} "
 }
 
+# Print how many submodules of the repo in the current directory, at any depth,
+# have a commit pinned in HEAD or the index that is on none of the submodule's
+# remotes.  Pushing such a pin publishes a commit that nobody else can fetch.
+# A submodule that has only moved ahead of its pin is not counted, since that
+# is just work in progress until it is staged in the outer repo.
+-mp-countUnpushedSubmodulePins(){
+    local -a fields
+    local -a subpaths
+    local -A pins
+    local entry
+    local sub
+    local sha
+    local unpushed
+    local count
+    count=0
+    if [[ ! -f .gitmodules ]]; then
+        echo $count
+        return
+    fi
+    # Each entry is "submodule.NAME.path\nPATH".
+    fields=("${(@0)$(git config -z -f .gitmodules --get-regexp '\.path$' 2>/dev/null)}")
+    subpaths=(${${fields:#}#*$'\n'})
+    if [[ ${#subpaths} -eq 0 ]]; then
+        echo $count
+        return
+    fi
+    # Entries are "MODE TYPE SHA\tPATH" from ls-tree and "MODE SHA STAGE\tPATH"
+    # from ls-files, and only mode 160000 is a submodule.
+    for entry in ${(0)"$(git --literal-pathspecs ls-tree -z HEAD -- $subpaths 2>/dev/null)"}; do
+        [[ "$entry" = "160000 "* ]] || continue
+        pins[${entry#*$'\t'}]+=" ${${(s: :)${entry%%$'\t'*}}[3]}"
+    done
+    for entry in ${(0)"$(git --literal-pathspecs ls-files -z -s -- $subpaths 2>/dev/null)"}; do
+        [[ "$entry" = "160000 "* ]] || continue
+        pins[${entry#*$'\t'}]+=" ${${(s: :)${entry%%$'\t'*}}[2]}"
+    done
+    for sub in ${(k)pins}; do
+        # An uninitialized submodule has nothing local to be unpushed.
+        [[ -e "$sub/.git" ]] || continue
+        for sha in ${=pins[$sub]}; do
+            # A pinned commit the submodule lacks entirely is someone else's,
+            # so the failure of rev-list on it is not counted.
+            unpushed="$(git -C "$sub" rev-list -n 1 "$sha" --not --remotes 2>/dev/null)"
+            if [[ -n "$unpushed" ]]; then
+                count=$((count + 1))
+                break
+            fi
+        done
+        count=$((count + $(builtin cd -q "$sub" && -mp-countUnpushedSubmodulePins)))
+    done
+    echo $count
+}
+
 -mp-gitStatus(){
     local gitlr
     local gitl
@@ -384,6 +444,19 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
             echo -n "${ms[git_no_remote_tracking_mark]}"
         fi
     fi
+    if [[ "${MEGAPROMPT_DISPLAY_P[git_worktrees]}" = true ]]; then
+        # Every worktree is counted, including a bare repo's own entry and
+        # worktrees whose directories are gone but not yet pruned.
+        summary="$(-mp-timeout-command git_worktrees git worktree list --porcelain 2>/dev/null)"
+        if -mp-timed-out-p $?; then
+            timedout=true
+        else
+            st=${#${(M)${(f)summary}:#worktree *}}
+            if [[ "$st" -ne 1 ]]; then
+                echo -n "${ms[git_worktrees_mark]}$st"
+            fi
+        fi
+    fi
     if [[ "$gitbare" = false ]]; then
         if [[ "${MEGAPROMPT_DISPLAY_P[git_dirty]}" = true ]]; then
             -mp-timeout-command git_dirty git diff --quiet --ignore-submodules HEAD 1>/dev/null 2>&1
@@ -400,6 +473,14 @@ PS1_cmd_stat='%(?,, %b%F{cyan}<%F{red}%?%F{cyan}>)'
                 timedout=true
             elif [[ -n "$summary" ]]; then
                 echo -n "${ms[git_submodule_dirty_mark]}"
+            fi
+        fi
+        if [[ "${MEGAPROMPT_DISPLAY_P[git_submodule_unpushed]}" = true ]]; then
+            summary="$(-mp-timeout-command git_submodule_unpushed -mp-countUnpushedSubmodulePins)"
+            if -mp-timed-out-p $?; then
+                timedout=true
+            elif [[ "$summary" -gt 0 ]]; then
+                echo -n "${ms[git_submodule_unpushed_mark]}$summary${ms[git_submodule_unpushed_mark_end]}"
             fi
         fi
         if [[ "${MEGAPROMPT_DISPLAY_P[git_untracked]}" = true ]]; then

@@ -44,6 +44,8 @@ Configuration
     - <code>git_dirty</code> do you want to be informed when your git repo is dirty?  (note: this may be slow)
     - <code>git_untracked</code> do you want to be informed when your git repo is has untracked files?
     - <code>git_ahead_behind</code> do you want to be informed when your git repo ahead or behind of its tracking branch?
+    - <code>git_submodule_unpushed</code> do you want a loud warning when your git repo pins (in HEAD or the index) a submodule commit that is not on any of that submodule's remotes?  Pushing the repo then would publish a commit nobody else can fetch.  (shown as `S▲` and the number of such submodules, counting nested ones, in black on red)
+    - <code>git_worktrees</code> do you want to see how many worktrees your git repo has?  (shown as `W` and the count, only when there is more than one)
     - <code>time</code> do you want the time of the command? (Yes -- it's useful later when you want to know when you ran something)
     - <code>username</code> do you want to see your username? (I recommend setting it to false for your normal username, true otherwise)
     - <code>host</code> do you want to see your hostname? (I recommend setting it to false unless $SSH_CLIENT or $TMUX is set)
